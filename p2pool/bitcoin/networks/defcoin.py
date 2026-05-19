@@ -20,7 +20,14 @@ CONF_FILE_FUNC = lambda: os.path.join(
 'defcoin.conf')
 
 P2P_PORT = 1337
-P2P_PREFIX = 'fbc0b6db'.decode('hex')
+LEGACY_P2P_PREFIX = 'fbc0b6db'.decode('hex')
+NEW_P2P_PREFIX = 'defc014e'.decode('hex')
+# MAGIC_BYTES_2026_LEGACY_KILL_SWITCH:
+# Keep DEFCOIN_P2POOL_USE_NEW_MAGIC unset/0 while the local defcoind service is
+# running legacy outbound magic. Set it to 1 when defcoind is switched to
+# -usenewdefcoinmagic=1. Later, remove LEGACY_P2P_PREFIX from P2P_PREFIXES.
+P2P_PREFIX = NEW_P2P_PREFIX if os.environ.get('DEFCOIN_P2POOL_USE_NEW_MAGIC', '').lower() in ('1', 'true', 'yes', 'on') else LEGACY_P2P_PREFIX
+P2P_PREFIXES = (P2P_PREFIX, LEGACY_P2P_PREFIX) if P2P_PREFIX == NEW_P2P_PREFIX else (P2P_PREFIX, NEW_P2P_PREFIX)
 RPC_PORT = 1335
 RPC_CHECK = defer.inlineCallbacks(lambda bitcoind: defer.returnValue(
 	(yield helper.check_block_header(bitcoind, '192047379f33ffd2bbbab3d53b9c4b9e9b72e48f888eadb3dcf57de95a6038ad')) and # genesis block
@@ -28,9 +35,9 @@ RPC_CHECK = defer.inlineCallbacks(lambda bitcoind: defer.returnValue(
 	(yield bitcoind.rpc_getblockchaininfo())['chain'] != 'test'
 ))
 
-BLOCK_EXPLORER_URL_PREFIX = 'https://explorer.def-coin.org/block/'
-ADDRESS_EXPLORER_URL_PREFIX = 'https://explorer.def-coin.org/address/'
-TX_EXPLORER_URL_PREFIX = 'https://explorer.def-coin.org/tx/'
+BLOCK_EXPLORER_URL_PREFIX = 'https://defcoin.dc903.org/explorer/block/'
+ADDRESS_EXPLORER_URL_PREFIX = 'https://defcoin.dc903.org/explorer/address/'
+TX_EXPLORER_URL_PREFIX = 'https://defcoin.dc903.org/explorer/tx/'
 
 SUBSIDY_FUNC = lambda height: 50*100000000 >> (height + 1)//840000
 SUBSIDY_DECIMAL = 1e-8

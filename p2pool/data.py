@@ -65,7 +65,13 @@ def is_segwit_activated(version, net):
     segwit_activation_version = getattr(net, 'SEGWIT_ACTIVATION_VERSION', 0)
     return version >= segwit_activation_version and segwit_activation_version > 0
 
+# JP's legacy donation address remains active because this fork bakes the
+# donation script shape into share serialization, and donation_proportion is
+# currently 0.0 anyway.
 DONATION_SCRIPT = '4104ffd03de44a6e11b9917f3a29f9443283d9871c9d743ef30d5eddcd37094b64d1b3d8090496b53256786bf5c82932ec23c3b74d9f05a6f95a8b5529352656664bac'.decode('hex')
+# Attempted replacement for DBbKV7upy41hV42dU895m4NcXn9AvHXUz9. Do not enable
+# until it is converted to the pay-to-pubkey form this fork expects.
+# DONATION_SCRIPT = '76a91446c6605b4472d27f6e844281033b46e18804893a88ac'.decode('hex')
 def donation_script_to_address(net):
     try:
         return bitcoin_data.script2_to_address(

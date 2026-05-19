@@ -16,7 +16,13 @@ class TooLong(Exception):
 
 class Protocol(protocol.Protocol):
     def __init__(self, message_prefix, max_payload_length, traffic_happened=variable.Event(), ignore_trailing_payload=False):
-        self._message_prefix = message_prefix
+        if isinstance(message_prefix, (tuple, list)):
+            self._message_prefixes = tuple(message_prefix)
+            self._message_prefix = self._message_prefixes[0]
+        else:
+            self._message_prefixes = (message_prefix,)
+            self._message_prefix = message_prefix
+        self._message_prefix_len = max(map(len, self._message_prefixes))
         self._max_payload_length = max_payload_length
         self.dataReceived2 = datachunker.DataChunker(self.dataReceiver())
         self.traffic_happened = traffic_happened
@@ -29,8 +35,13 @@ class Protocol(protocol.Protocol):
     def dataReceiver(self):
         while True:
             start = ''
-            while start != self._message_prefix:
-                start = (start + (yield 1))[-len(self._message_prefix):]
+            while start not in self._message_prefixes:
+                start = (start + (yield 1))[-self._message_prefix_len:]
+                for prefix in self._message_prefixes:
+                    if start.endswith(prefix):
+                        start = prefix
+                        break
+            self._message_prefix = start
             
             command = (yield 12).rstrip('\0')
             length, = struct.unpack('<I', (yield 4))

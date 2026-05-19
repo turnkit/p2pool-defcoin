@@ -7,20 +7,20 @@ from p2pool.bitcoin import networks
 
 ##### CPU pool is for future use for slower miners when network is larger #####
 ###### pool 0, CPU, <1mh
-######WORKER_PORT = 13370
-######BOOTSTRAP_ADDRS = ['135.148.43.187']
+#WORKER_PORT = 13370
+#BOOTSTRAP_ADDRS = ['135.148.43.187']
 
 # pool 1, USB, 1mh to 50mh
 #WORKER_PORT = 13371
 #BOOTSTRAP_ADDRS = ['135.148.43.188']
 
 # pool 2, ASIC, >50mh
-#WORKER_PORT = 13372
-#BOOTSTRAP_ADDRS = ['135.148.43.189']
+WORKER_PORT = 13372
+BOOTSTRAP_ADDRS = ['135.148.43.189']
 
-
-
-
+BLOCK_EXPLORER_URL_PREFIX = 'https://defcoin.dc903.org/explorer/block/'
+ADDRESS_EXPLORER_URL_PREFIX = 'https://defcoin.dc903.org/explorer/address/'
+TX_EXPLORER_URL_PREFIX = 'https://defcoin.dc903.org/explorer/tx/'
 
 PARENT = networks.nets['defcoin']
 P2P_PORT = 1337

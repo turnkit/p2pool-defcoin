@@ -14,7 +14,7 @@ from p2pool.util import deferral, p2protocol, pack, variable
 
 class Protocol(p2protocol.Protocol):
     def __init__(self, net):
-        p2protocol.Protocol.__init__(self, net.P2P_PREFIX, 32000000, ignore_trailing_payload=True)
+        p2protocol.Protocol.__init__(self, getattr(net, 'P2P_PREFIXES', net.P2P_PREFIX), 32000000, ignore_trailing_payload=True)
     
     def connectionMade(self):
         self.send_version(
