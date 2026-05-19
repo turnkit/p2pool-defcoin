@@ -4,7 +4,12 @@ Date: 2026-05-19
 
 ## Executive Summary
 
-The live `defcoin.dc903.org` p2pool service is based on the Python 2 P2Pool codebase, with Defcoin-specific support coming from the `hellbyte/p2pool-defcoin` repository. The live server checkout identifies its upstream remote as:
+The live `defcoin.dc903.org` p2pool service has two different provenance layers:
+
+1. Direct Git source for the server checkout: the server's `.git/config` points at the old `charlesrocket/p2pool-defcoin` URL, which GitHub now redirects to the canonical `hellbyte/p2pool-defcoin` repository.
+2. Older upstream code lineage: that Defcoin p2pool repository appears to be derived from the Python 2 / `jtoomim/p2pool` era of P2Pool, based on protocol/share-version markers and module layout.
+
+The live server checkout identifies its immediate upstream remote as:
 
 - Upstream Defcoin fork: `https://github.com/charlesrocket/p2pool-defcoin`
 - GitHub redirect/current owner: `https://github.com/hellbyte/p2pool-defcoin`
@@ -13,7 +18,7 @@ The live `defcoin.dc903.org` p2pool service is based on the Python 2 P2Pool code
 - Upstream default branch: `master`
 - Upstream tags: none found in the server checkout
 
-That repository is not marked by GitHub as a formal fork. By code lineage, it is a Defcoin adaptation of the P2Pool Python 2 lineage and most closely matches the `jtoomim/p2pool` era rather than the current `p2pool/p2pool` tree. The strongest version markers are:
+That repository is not marked by GitHub as a formal fork, so GitHub cannot prove a formal fork relationship to `jtoomim/p2pool`. By code lineage, however, it is a Defcoin adaptation of the P2Pool Python 2 lineage and most closely matches the `jtoomim/p2pool` era rather than the current `p2pool/p2pool` tree. The strongest version markers are:
 
 - P2Pool protocol version: `3501`
 - Current share format: `PaddingBugfixShare.VERSION = 35`
@@ -30,7 +35,7 @@ For GitHub traceability, `turnkit/p2pool-defcoin` is intended to carry the curre
 
 ### 2. jtoomim-Era Python 2 P2Pool
 
-The Defcoin fork's core files align much more closely with `jtoomim/p2pool` than with the current `p2pool/p2pool` repository. The matching markers include protocol version `3501`, share versions `35/34/33/32/17`, SegWit-aware share handling, and the same broad module layout.
+The Defcoin fork's core files align much more closely with `jtoomim/p2pool` than with the current `p2pool/p2pool` repository. The matching markers include protocol version `3501`, share versions `35/34/33/32/17`, SegWit-aware share handling, and the same broad module layout. This is a code-lineage finding, not the server's direct Git remote.
 
 ### 3. hellbyte/charlesrocket Defcoin Fork
 
