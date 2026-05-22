@@ -51,7 +51,10 @@ def check(bitcoind, net, args):
 def getwork(bitcoind, use_getblocktemplate=False, txidcache={}, feecache={}, feefifo=[], known_txs={}):
     def go():
         if use_getblocktemplate:
-            return bitcoind.rpc_getblocktemplate(dict(mode='template', rules=['segwit']))
+            # Defcoin Core Nu inherits modern getblocktemplate rule negotiation.
+            # The chain does not need a consensus fork for this; the RPC call
+            # must explicitly acknowledge rules the daemon may include.
+            return bitcoind.rpc_getblocktemplate(dict(mode='template', rules=['segwit', 'mweb']))
         else:
             return bitcoind.rpc_getmemorypool()
     try:

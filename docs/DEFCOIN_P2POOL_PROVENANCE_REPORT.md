@@ -1,6 +1,6 @@
 # Defcoin P2Pool Provenance and Technical Comparison Report
 
-Date: 2026-05-19
+Date: 2026-05-22
 
 ## Executive Summary
 
@@ -52,6 +52,7 @@ The dc903 live branch adds operational fixes and the 2026 Defcoin network transi
 
 - dual legacy/new p2pool magic support
 - per-peer reply magic selection
+- Defcoin Core Nu `getblocktemplate` rule negotiation compatibility
 - current `defcoin.dc903.org` explorer links
 - selected ASIC worker pool settings
 - pidfile guard in `run_p2pool.py`
@@ -133,6 +134,16 @@ This is important because accepting both old and new magic is not enough. A lega
 
 This module handles p2pool's direct connection to the parent daemon's p2p interface. The dc903 changes are minimal but support the multi-prefix behavior by passing the parent network prefix configuration into the generic protocol layer.
 
+### Parent Chain Work RPC: `p2pool/bitcoin/helper.py`
+
+This module requests parent-chain work from Defcoin Core / defcoind.
+
+Current dc903 addition:
+
+- Calls `getblocktemplate` with both `segwit` and `mweb` in the rule list.
+
+Plain English impact: this does not activate a new consensus rule or hard fork Defcoin. It only acknowledges rule names the modern Defcoin Core Nu daemon may include in `getblocktemplate`, preventing the old P2Pool code from failing against the newer backend.
+
 ### Share Data and Serialization: `p2pool/data.py`
 
 The Defcoin server remains on the jtoomim-era share formats:
@@ -187,6 +198,7 @@ Plain English impact: the p2pool web surface is operator-facing and customized f
 | Mining network | General p2pool sharechain networks | Adds Defcoin sharechain constants and pool tiers | Enables ASIC worker port and dc903 bootstrap behavior |
 | Wire magic | Single configured prefix | Defcoin legacy prefix `fbc0b6db` | Dual prefix support: `fbc0b6db` and `defc014e` |
 | Per-peer reply magic | Not needed with one prefix | Not implemented | Replies with the same prefix the peer used |
+| Work RPC | Legacy `getblocktemplate` rules | Legacy `getblocktemplate` rules | Declares `segwit` and `mweb` rules for Defcoin Core Nu compatibility |
 | Version identity | Dynamic git hash | `dc1b4af` upstream hash | Previously dirty on server; branch commit documents changes |
 | Web UI | Stock P2Pool UI | Some Defcoin README/UI references | Customized active UI with preserved stock backup |
 | Runtime guard | Direct run script | Direct run script | pidfile guard against duplicate process starts |
@@ -199,6 +211,7 @@ The dc903 p2pool branch does not change Defcoin consensus rules. It does not cha
 
 1. Decide whether the Turnkit repository should track only the deployed dc903 server state or also carry planned p2pool experiments.
 2. Add the systemd unit and README files that live outside the repository if we want fully reproducible deployment from GitHub.
+   The current dc903 service uses `DEFCOIN_P2POOL_USE_NEW_MAGIC=1` and `--allow-obsolete-bitcoind`.
 3. Consider replacing the Python 2 runtime long-term. This fork is operational but old.
 4. Compare against modern p2poolv2 separately before attempting any interoperability claims.
 5. Review whether the customized web UI should be kept in this repository or split into a separate UI layer.

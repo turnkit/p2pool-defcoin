@@ -29,6 +29,20 @@ Running P2Pool:
 
 You can run a "private" node to connect your miner(s) to or a public pool.
 
+Defcoin Core Nu note:
+-------------------------
+When running this fork against Defcoin Core Nu 26.3.x, use the new Defcoin
+parent-chain magic for outbound P2P and keep legacy magic enabled only as a
+transition path. The dc903 deployment uses:
+
+    DEFCOIN_P2POOL_USE_NEW_MAGIC=1 python run_p2pool.py --net defcoin --allow-obsolete-bitcoind -a YOURADDR -n YOUR_PUBLIC_IP --bitcoind-p2p-port 10332
+
+`DEFCOIN_P2POOL_USE_NEW_MAGIC=1` makes P2Pool prefer Defcoin's `defc014e`
+parent-chain magic while still accepting legacy `fbc0b6db` peers. Each peer is
+answered with the magic it used. `--allow-obsolete-bitcoind` is currently needed
+because this old Python 2 P2Pool fork has hard-coded softfork expectations that
+do not line up cleanly with Defcoin Core Nu's Litecoin-derived RPC reporting.
+
 
 All
 -------------------------
