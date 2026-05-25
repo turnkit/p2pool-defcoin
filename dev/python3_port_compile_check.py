@@ -10,12 +10,15 @@ from pathlib import Path
 import py_compile
 
 
+SKIP_DIRS = {".git", ".venv", "__pycache__"}
+
+
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
     failures = []
     total = 0
     for path in root.rglob("*.py"):
-        if ".git" in path.parts:
+        if SKIP_DIRS.intersection(path.parts):
             continue
         total += 1
         try:
