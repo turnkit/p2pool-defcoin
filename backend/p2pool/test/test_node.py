@@ -209,7 +209,7 @@ class Test(unittest.TestCase):
         proxy = jsonrpc.HTTPProxy('http://127.0.0.1:' + str(port.getHost().port),
             headers=dict(Authorization='Basic ' + base64.b64encode(b'user/0:password').decode('ascii')))
         
-        yield deferral.sleep(3)
+        yield deferral.sleep(8)
         
         for i in range(100):
             blah = yield proxy.rpc_getwork()

@@ -18,7 +18,8 @@ from setuptools import setup, Extension
 ltc_scrypt_module = Extension('ltc_scrypt',
                                sources = ['scryptmodule.c',
                                           'scrypt.c'],
-                               include_dirs=['.'])
+                               include_dirs=['.'],
+                               extra_compile_args=['-O0', '-fwrapv', '-fno-strict-aliasing'])
 
 setup (name = 'ltc_scrypt',
        version = '1.0.99',
