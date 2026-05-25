@@ -44,6 +44,7 @@
 
 ident = '$Id: NS.py 1468 2008-05-24 01:55:33Z warnes $'
 from .version import __version__
+from .Errors import Error
 
 ##############################################################################
 # Namespace Class
@@ -99,6 +100,5 @@ class NS:
 
     def __init__(self):
         raise Error("Don't instantiate this")
-
 
 

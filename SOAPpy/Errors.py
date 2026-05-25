@@ -55,7 +55,7 @@ class Error(exceptions.Exception):
         return "<Error : %s>" % self.msg
     __repr__ = __str__
     def __call__(self):
-        return (msg,)
+        return (self.msg,)
 
 class RecursionError(Error):
     pass
@@ -76,4 +76,3 @@ class HTTPError(Error):
 
 class UnderflowError(exceptions.ArithmeticError):
     pass
-

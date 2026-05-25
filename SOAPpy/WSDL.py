@@ -59,7 +59,8 @@ class Proxy:
 
         if self.wsdl is None:
             try: 
-                file(wsdlsource)
+                with open(wsdlsource):
+                    pass
                 self.wsdl = reader.loadFromFile(wsdlsource)
                 #print 'file'
             except (IOError, OSError): pass
@@ -134,4 +135,3 @@ class Proxy:
                 details = outps[parm]
                 print("   Out #%d: %s  (%s)" % (parm, details.name, details.type))
             print()
-

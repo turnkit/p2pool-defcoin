@@ -8,7 +8,6 @@ shares or network messages under Python 3.
 
 from pathlib import Path
 import py_compile
-import sys
 
 
 def main() -> int:

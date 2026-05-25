@@ -8,7 +8,7 @@ def ensure_bytes(value, encoding='latin1'):
         return bytes(value)
     if isinstance(value, str):
         return value.encode(encoding)
-    raise TypeError('expected bytes-like value, got %s' % (type(value).__name__,))
+    raise TypeError(f'expected bytes-like value, got {type(value).__name__}')
 
 
 def ensure_text(value, encoding='ascii'):
@@ -16,7 +16,7 @@ def ensure_text(value, encoding='ascii'):
         return value
     if isinstance(value, bytes):
         return value.decode(encoding)
-    raise TypeError('expected text-like value, got %s' % (type(value).__name__,))
+    raise TypeError(f'expected text-like value, got {type(value).__name__}')
 
 
 def bchr(value):

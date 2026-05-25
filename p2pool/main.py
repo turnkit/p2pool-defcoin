@@ -62,12 +62,12 @@ class keypool():
     def updatestamp(self, n):
         self.stamp = n
 
-    def paytotal(self):
+    def paytotal(self, node):
         self.payouttotal = 0.0
-        print(("pubkeys.keys: %s" % pubkeys.keys))
-        for i in range(len(pubkeys.keys)):
+        print(("pubkeys.keys: %s" % self.keys))
+        for i in range(len(self.keys)):
             self.payouttotal += node.get_current_txouts().get(
-                    pubkeys.keys[i]['address'], 0) * 1e-8
+                    self.keys[i]['address'], 0) * 1e-8
         return self.payouttotal
 
     def getpaytotal(self):

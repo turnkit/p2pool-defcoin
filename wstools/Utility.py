@@ -440,7 +440,7 @@ class DOM:
                     return child
         if default is not join:
             return default
-        raise KeyError(name)
+        raise KeyError(id)
 
     def getMappingById(self, document, depth=None, element=None,
                        mapping=None, level=1):
@@ -1112,7 +1112,7 @@ class ElementProxy(Base, MessageInterface):
         parts = SplitQName(qualifiedName)
         element = self._getNode()
         if len(parts) == 1:
-            return (self._dom.findTargetNS(element), value)
+            return (self._dom.findTargetNS(element), parts[1])
         return self._dom.findNamespaceURI(parts[0], element)
 
     def resolvePrefix(self, prefix):
@@ -1379,4 +1379,3 @@ if 1:
         return clone
 
     xml.dom.minidom._clone_node = _clone_node
-

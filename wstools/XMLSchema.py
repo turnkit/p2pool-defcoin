@@ -2959,7 +2959,7 @@ class SimpleType(XMLSchemaComponent,\
                 elif component in RestrictionMarker.facets:
                     self.facets.append(contents[indx])
                 else:
-                    raise SchemaError('Unknown component (%s)' %(i.getTagName()))
+                    raise SchemaError('Unknown component (%s)' %(contents[indx].getTagName()))
             self.content = tuple(content)
 
 
@@ -2999,7 +2999,7 @@ class SimpleType(XMLSchemaComponent,\
                     content.append(AnonymousSimpleType(self))
                     content[-1].fromDom(contents[indx])
                 else:
-                    raise SchemaError('Unknown component (%s)' %(i.getTagName()))
+                    raise SchemaError('Unknown component (%s)' %(contents[indx].getTagName()))
             self.content = tuple(content)
 
     class List(XMLSchemaComponent, 
@@ -3051,7 +3051,7 @@ class SimpleType(XMLSchemaComponent,\
                     self.content.fromDom(contents[indx])
                     break
                 else:
-                    raise SchemaError('Unknown component (%s)' %(i.getTagName()))
+                    raise SchemaError('Unknown component (%s)' %(contents[indx].getTagName()))
 
                  
 class AnonymousSimpleType(SimpleType,\
@@ -3111,4 +3111,3 @@ class TypeDescriptionComponent(tupleClass):
 
     def getName(self):
         return self[1]
-

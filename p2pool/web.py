@@ -73,7 +73,7 @@ def get_web_root(wb, datadir_path, bitcoind_getinfo_var, stop_event=variable.Eve
                 total_random += results[s]
                 random_set.add(s)
             if total_random:
-                winner = math.weighted_choice((addr, results[script]) for addr in random_set)
+                winner = math.weighted_choice((addr, results[addr]) for addr in random_set)
                 for addr in random_set:
                     del results[addr]
                 results[winner] = total_random

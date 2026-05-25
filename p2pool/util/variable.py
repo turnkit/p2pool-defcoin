@@ -119,7 +119,7 @@ class VariableDict(Variable):
     
     def remove(self, values):
         gone_items = dict([item for item in values.items() if item[0] in self.value])
-        for key in gone_keys:
-            del self.values[key]
-        self.removed.happened(new_items)
+        for key in gone_items:
+            del self.value[key]
+        self.removed.happened(gone_items)
         # XXX call self.changed and self.transitioned

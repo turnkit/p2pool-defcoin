@@ -47,6 +47,7 @@ or
   http://www.w3.org/Consortium/Legal/copyright-software-19980720
 '''
 
+from functools import cmp_to_key
 import string
 from xml.dom import Node
 try:
@@ -57,7 +58,7 @@ except:
         XML = "http://www.w3.org/XML/1998/namespace"
 try:
     import io
-    StringIO = cStringIO
+    StringIO = io.StringIO
 except ImportError:
     import io
 
@@ -71,13 +72,18 @@ _inclusive = lambda n: n.unsuppressedPrefixes == None
 # first element?
 _LesserElement, _Element, _GreaterElement = list(range(3))
 
+def _cmp_value(left, right):
+    left = '' if left is None else left
+    right = '' if right is None else right
+    return (left > right) - (left < right)
+
 def _sorter(n1,n2):
     '''_sorter(n1,n2) -> int
     Sorting predicate for non-NS attributes.'''
 
-    i = cmp(n1.namespaceURI, n2.namespaceURI)
+    i = _cmp_value(n1.namespaceURI, n2.namespaceURI)
     if i: return i
-    return cmp(n1.localName, n2.localName)
+    return _cmp_value(n1.localName, n2.localName)
 
 
 def _sorter_ns(n1,n2):
@@ -86,7 +92,7 @@ def _sorter_ns(n1,n2):
 
     if n1[0] == 'xmlns': return -1
     if n2[0] == 'xmlns': return 1
-    return cmp(n1[0], n2[0])
+    return _cmp_value(n1[0], n2[0])
 
 def _utilized(n, node, other_attrs, unsuppressedPrefixes):
     '''_utilized(n, node, other_attrs, unsuppressedPrefixes) -> boolean
@@ -382,7 +388,7 @@ class _implementation:
                         ns_unused_inherited[n] = v
 
             # Sort and render the ns, marking what was rendered.
-            ns_to_render.sort(_sorter_ns)
+            ns_to_render.sort(key=cmp_to_key(_sorter_ns))
             for n,v in ns_to_render:
                 self._do_attr(n, v)
                 ns_rendered[n]=v    #0417
@@ -394,7 +400,7 @@ class _implementation:
                 other_attrs.extend(list(xml_attrs_local.values()))
             else:
                 other_attrs.extend(list(xml_attrs.values()))
-            other_attrs.sort(_sorter)
+            other_attrs.sort(key=cmp_to_key(_sorter))
             for a in other_attrs:
                 self._do_attr(a.nodeName, a.value)
             W('>')
