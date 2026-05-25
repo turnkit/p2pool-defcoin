@@ -11,6 +11,7 @@ from twisted.internet import protocol
 import p2pool
 from . import data as bitcoin_data
 from p2pool.util import deferral, p2protocol, pack, variable
+from p2pool.util.py3 import ensure_bytes
 
 class Protocol(p2protocol.Protocol):
     def __init__(self, net):
@@ -32,7 +33,7 @@ class Protocol(p2protocol.Protocol):
                 port=self.transport.getHost().port,
             ),
             nonce=secrets.randbits(64),
-            sub_version_num='/P2Pool:%s/' % (p2pool.__version__,),
+            sub_version_num=ensure_bytes('/P2Pool:%s/' % (p2pool.__version__,), 'ascii'),
             start_height=0,
         )
     
