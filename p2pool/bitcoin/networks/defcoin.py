@@ -20,8 +20,8 @@ CONF_FILE_FUNC = lambda: os.path.join(
 'defcoin.conf')
 
 P2P_PORT = 1337
-LEGACY_P2P_PREFIX = 'fbc0b6db'.decode('hex')
-NEW_P2P_PREFIX = 'defc014e'.decode('hex')
+LEGACY_P2P_PREFIX = bytes.fromhex('fbc0b6db')
+NEW_P2P_PREFIX = bytes.fromhex('defc014e')
 # MAGIC_BYTES_2026_LEGACY_KILL_SWITCH:
 # Keep DEFCOIN_P2POOL_USE_NEW_MAGIC unset/0 while the local defcoind service is
 # running legacy outbound magic. Set it to 1 when defcoind is switched to

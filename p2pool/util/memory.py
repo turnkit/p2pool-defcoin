@@ -10,10 +10,17 @@ def resident():
         w = WMI('.')
         result = w.query("SELECT WorkingSet FROM Win32_PerfRawData_PerfProc_Process WHERE IDProcess=%d" % os.getpid())
         return int(result[0].WorkingSet)
-    else:
+    try:
         with open('/proc/%d/status' % os.getpid()) as f:
             v = f.read()
-        i = v.index('VmRSS:')
-        v = v[i:].split(None, 3)
-        #assert len(v) == 3, v
-        return float(v[1]) * _scale[v[2]]
+    except OSError:
+        import resource
+        rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        if platform.system() == 'Darwin':
+            return rss
+        return rss * 1024
+
+    i = v.index('VmRSS:')
+    v = v[i:].split(None, 3)
+    #assert len(v) == 3, v
+    return float(v[1]) * _scale[v[2]]

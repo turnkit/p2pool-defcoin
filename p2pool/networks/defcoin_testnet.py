@@ -25,7 +25,7 @@ BLOCK_MAX_WEIGHT = 4000000
 BOOTSTRAP_ADDRS = []
 ANNOUNCE_CHANNEL = '#p2pool-dfc-alt'
 
-IDENTIFIER = '17b751fd110a4637'.decode('hex')
-PREFIX = 'fc962530dd5c11ef'.decode('hex')
+IDENTIFIER = bytes.fromhex('17b751fd110a4637')
+PREFIX = bytes.fromhex('fc962530dd5c11ef')
 
 PERSIST = False

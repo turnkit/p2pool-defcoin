@@ -20,7 +20,7 @@ CONF_FILE_FUNC = lambda: os.path.join(
 'defcoin.conf')
 
 P2P_PORT = 62456
-P2P_PREFIX = 'b6f5d3cf'.decode('hex')
+P2P_PREFIX = bytes.fromhex('b6f5d3cf')
 RPC_PORT = 62455
 RPC_CHECK = defer.inlineCallbacks(lambda bitcoind: defer.returnValue(
 	(yield bitcoind.rpc_getblockchaininfo())['chain'] == 'test'

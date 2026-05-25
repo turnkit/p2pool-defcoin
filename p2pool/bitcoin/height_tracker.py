@@ -40,6 +40,12 @@ class HeightTracker(object):
         self._think_task.start(15)
         self._think2_task = deferral.RobustLoopingCall(self._think2)
         self._think2_task.start(15)
+
+    def stop(self):
+        self._factory.new_headers.unwatch(self._watch1)
+        self._factory.new_block.unwatch(self._watch2)
+        tasks = [self._clear_task, self._think_task, self._think2_task]
+        return defer.DeferredList([task.stop() for task in tasks if task.running], consumeErrors=True)
     
     def _think(self):
         try:
@@ -68,11 +74,13 @@ class HeightTracker(object):
         self._think()
         
         if len(self._tracker.items) >= self._last_notified_size + 100:
-            print 'Have %i/%i block headers' % (len(self._tracker.items), self._backlog_needed)
+            print('Have %i/%i block headers' % (len(self._tracker.items), self._backlog_needed))
             self._last_notified_size = len(self._tracker.items)
     
     @defer.inlineCallbacks
-    def _request(self, last):
+    def _request(self, last=None):
+        if last is None:
+            last = self._best_block_func()
         if last in self._tracker.items:
             return
         if last in self._requested:
@@ -118,8 +126,10 @@ def get_height_funcs(bitcoind, factory, best_block_func, net):
         def get_height(block_hash):
             this_height = height_cacher.call_now(block_hash, 0)
             return this_height
+        stop_height_tracker = lambda: None
     else:
-        get_height_rel_highest = HeightTracker(best_block_func, factory, 5*net.SHARE_PERIOD*net.CHAIN_LENGTH/net.PARENT.BLOCK_PERIOD).get_height_rel_highest
-        get_height = HeightTracker(best_block_func, factory, 5*net.SHARE_PERIOD*net.CHAIN_LENGTH/net.PARENT.BLOCK_PERIOD).get_height
-    defer.returnValue((get_height_rel_highest, get_height))
-
+        tracker = HeightTracker(best_block_func, factory, 5*net.SHARE_PERIOD*net.CHAIN_LENGTH/net.PARENT.BLOCK_PERIOD)
+        get_height_rel_highest = tracker.get_height_rel_highest
+        get_height = tracker.get_height
+        stop_height_tracker = tracker.stop
+    defer.returnValue((get_height_rel_highest, get_height, stop_height_tracker))

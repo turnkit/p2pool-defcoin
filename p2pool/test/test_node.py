@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 import base64
 import random
@@ -11,7 +11,8 @@ from twisted.web import client, resource, server
 
 from p2pool import data, node, work, main
 from p2pool.bitcoin import data as bitcoin_data, networks, worker_interface
-from p2pool.util import deferral, jsonrpc, math, variable
+from p2pool.util import deferral, http, jsonrpc, math, variable
+from p2pool.util.py3 import bytes_to_hex, hex_to_bytes
 
 class bitcoind(object): # can be used as p2p factory, p2p protocol, or rpc jsonrpc proxy
     def __init__(self):
@@ -19,10 +20,10 @@ class bitcoind(object): # can be used as p2p factory, p2p protocol, or rpc jsonr
         self.headers = {0x16c169477c25421250ec5d32cf9c6d38538b5de970a2355fd89: {
             'nonce': 1853158954,
             'timestamp': 1351658517,
-            'merkle_root': 2282849479936278423916707524932131168473430114569971665822757638339486597658L,
+            'merkle_root': 2282849479936278423916707524932131168473430114569971665822757638339486597658,
             'version': 1,
-            'previous_block': 1048610514577342396345362905164852351970507722694242579238530L,
-            'bits': bitcoin_data.FloatingInteger(bits=0x1a0513c5, target=0x513c50000000000000000000000000000000000000000000000L),
+            'previous_block': 1048610514577342396345362905164852351970507722694242579238530,
+            'bits': bitcoin_data.FloatingInteger(bits=0x1a0513c5, target=0x513c50000000000000000000000000000000000000000000000),
         }}
         
         self.conn = variable.Variable(self)
@@ -41,6 +42,9 @@ class bitcoind(object): # can be used as p2p factory, p2p protocol, or rpc jsonr
         pass
     
     def send_tx(self, tx):
+        pass
+
+    def send_getheaders(self, *args, **kwargs):
         pass
     
     def get_block_header(self, block_hash):
@@ -64,12 +68,12 @@ class bitcoind(object): # can be used as p2p factory, p2p protocol, or rpc jsonr
             pass
         elif param['mode'] == 'submit':
             result = param['data']
-            block = bitcoin_data.block_type.unpack(result.decode('hex'))
+            block = bitcoin_data.block_type.unpack(hex_to_bytes(result))
             if sum(tx_out['value'] for tx_out in block['txs'][0]['tx_outs']) != sum(tx['tx_outs'][0]['value'] for tx in block['txs'][1:]) + 5000000000:
-                print 'invalid fee'
+                print('invalid fee')
             if block['header']['previous_block'] != self.blocks[-1]:
                 return False
-            if bitcoin_data.hash256(result.decode('hex')) > block['header']['bits'].target:
+            if bitcoin_data.hash256(hex_to_bytes(result)) > block['header']['bits'].target:
                 return False
             header_hash = bitcoin_data.hash256(bitcoin_data.block_header_type.pack(block['header']))
             self.blocks.append(header_hash)
@@ -80,10 +84,15 @@ class bitcoind(object): # can be used as p2p factory, p2p protocol, or rpc jsonr
             raise jsonrpc.Error_for_code(-1)('invalid request')
         
         txs = []
-        for i in xrange(100):
+        for i in range(100):
             fee = i
             txs.append(dict(
-                data=bitcoin_data.tx_type.pack(dict(version=1, tx_ins=[], tx_outs=[dict(value=fee, script='hello!'*100)], lock_time=0)).encode('hex'),
+                data=bytes_to_hex(bitcoin_data.tx_type.pack(dict(
+                    version=1,
+                    tx_ins=[dict(previous_output=None, script=b'', sequence=None)],
+                    tx_outs=[dict(value=fee, script=b'hello!'*100)],
+                    lock_time=0,
+                ))),
                 fee=fee,
             ))
         return {
@@ -109,19 +118,20 @@ class bitcoind(object): # can be used as p2p factory, p2p protocol, or rpc jsonr
             "height" : len(self.blocks),
         }
 
-@apply
 class mm_provider(object):
     def __getattr__(self, name):
-        print '>>>>>>>', name
+        print('>>>>>>>', name)
     def rpc_getauxblock(self, request, result1=None, result2=None):
         if result1 is not None:
-            print result1, result2
+            print(result1, result2)
             return True
         return {
             "target" : "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", # 2**256*2/3
             "hash" : "2756ea0315d46dc3d8d974f34380873fc88863845ac01a658ef11bc3b368af52",
             "chainid" : 1
         }
+
+mm_provider = mm_provider()
 
 mynet = math.Object(
     NAME='mynet',
@@ -131,17 +141,23 @@ mynet = math.Object(
     REAL_CHAIN_LENGTH=20*60//3, # shares
     TARGET_LOOKBEHIND=200, # shares
     SPREAD=3, # blocks
-    IDENTIFIER='cca5e24ec6408b1e'.decode('hex'),
-    PREFIX='ad9614f6466a39cf'.decode('hex'),
+    IDENTIFIER=bytes.fromhex('cca5e24ec6408b1e'),
+    PREFIX=bytes.fromhex('ad9614f6466a39cf'),
     P2P_PORT=19338,
     MIN_TARGET=2**256 - 1,
     MAX_TARGET=2**256 - 1,
+    BLOCK_MAX_SIZE=1000000,
+    BLOCK_MAX_WEIGHT=4000000,
     PERSIST=False,
     WORKER_PORT=19327,
     BOOTSTRAP_ADDRS='72.14.191.28'.split(' '),
     ANNOUNCE_CHANNEL='#p2pool-alt',
     VERSION_CHECK=lambda v: True,
 )
+
+TEST_PAYOUT_ADDRESS = bitcoin_data.pubkey_hash_to_address(
+    42, networks.nets['litecoin_testnet'].ADDRESS_VERSION, -1,
+    networks.nets['litecoin_testnet'])
 
 class MiniNode(object):
     @classmethod
@@ -155,10 +171,11 @@ class MiniNode(object):
         self.n.p2p_node = node.P2PNode(self.n, port=0, max_incoming_conns=1000000, addr_store={}, connect_addrs=[('127.0.0.1', peer_port) for peer_port in peer_ports])
         self.n.p2p_node.start()
 
-        wb = work.WorkerBridge(node=self.n, my_pubkey_hash=random.randrange(2**160), donation_percentage=random.uniform(0, 10), merged_urls=merged_urls, worker_fee=3, args=math.Object(donation_percentage=random.uniform(0, 10), address='foo', worker_fee=3, timeaddresses=1000), pubkeys=main.keypool(), bitcoind=bitcoind)
+        wb = work.WorkerBridge(node=self.n, my_address=TEST_PAYOUT_ADDRESS, donation_percentage=random.uniform(0, 10), merged_urls=merged_urls, worker_fee=3, args=math.Object(donation_percentage=random.uniform(0, 10), address=TEST_PAYOUT_ADDRESS, worker_fee=3, timeaddresses=1000, coinb_texts=[]), pubkeys=main.keypool(), bitcoind=bitcoind, share_rate=0)
         self.wb = wb
         web_root = resource.Resource()
-        worker_interface.WorkerInterface(wb).attach_to(web_root)
+        self.worker_interface = worker_interface.WorkerInterface(wb)
+        self.worker_interface.attach_to(web_root)
         self.web_port = reactor.listenTCP(0, server.Site(web_root))
         
         defer.returnValue(self)
@@ -166,9 +183,10 @@ class MiniNode(object):
     @defer.inlineCallbacks
     def stop(self):
         yield self.web_port.stopListening()
+        self.worker_interface.stop()
         yield self.n.p2p_node.stop()
         yield self.n.stop()
-        del self.web_port, self.n
+        del self.web_port, self.worker_interface, self.n
 
 class Test(unittest.TestCase):
     @defer.inlineCallbacks
@@ -176,23 +194,24 @@ class Test(unittest.TestCase):
         bitd = bitcoind()
         
         mm_root = resource.Resource()
-        mm_root.putChild('', jsonrpc.HTTPServer(mm_provider))
+        mm_root.putChild(b'', jsonrpc.HTTPServer(mm_provider))
         mm_port = reactor.listenTCP(0, server.Site(mm_root))
         
         n = node.Node(bitd, bitd, [], [], mynet)
         yield n.start()
         
-        wb = work.WorkerBridge(node=n, my_pubkey_hash=42, donation_percentage=2, merged_urls=[('http://127.0.0.1:%i' % (mm_port.getHost().port,), '')], worker_fee=3, args=math.Object(donation_percentage=2, address='foo', worker_fee=3, timeaddresses=1000), pubkeys=main.keypool(), bitcoind=bitd)
+        wb = work.WorkerBridge(node=n, my_address=TEST_PAYOUT_ADDRESS, donation_percentage=2, merged_urls=[('http://127.0.0.1:%i' % (mm_port.getHost().port,), '')], worker_fee=3, args=math.Object(donation_percentage=2, address=TEST_PAYOUT_ADDRESS, worker_fee=3, timeaddresses=1000, coinb_texts=[]), pubkeys=main.keypool(), bitcoind=bitd, share_rate=0)
         web_root = resource.Resource()
-        worker_interface.WorkerInterface(wb).attach_to(web_root)
+        wi = worker_interface.WorkerInterface(wb)
+        wi.attach_to(web_root)
         port = reactor.listenTCP(0, server.Site(web_root))
         
         proxy = jsonrpc.HTTPProxy('http://127.0.0.1:' + str(port.getHost().port),
-            headers=dict(Authorization='Basic ' + base64.b64encode('user/0:password')))
+            headers=dict(Authorization='Basic ' + base64.b64encode(b'user/0:password').decode('ascii')))
         
         yield deferral.sleep(3)
         
-        for i in xrange(100):
+        for i in range(100):
             blah = yield proxy.rpc_getwork()
             yield proxy.rpc_getwork(blah['data'])
         
@@ -204,9 +223,10 @@ class Test(unittest.TestCase):
         
         wb.stop()
         n.stop()
+        wi.stop()
         
         yield port.stopListening()
-        del n, wb, web_root, port, proxy
+        del n, wb, wi, web_root, port, proxy
         import gc
         gc.collect()
         gc.collect()
@@ -224,19 +244,19 @@ class Test(unittest.TestCase):
         bitd = bitcoind()
         
         nodes = []
-        for i in xrange(N):
+        for i in range(N):
             nodes.append((yield MiniNode.start(mynet, bitd, bitd, [mn.n.p2p_node.serverfactory.listen_port.getHost().port for mn in nodes], [])))
         
         yield deferral.sleep(3)
         
-        for i in xrange(SHARES):
+        for i in range(SHARES):
             proxy = jsonrpc.HTTPProxy('http://127.0.0.1:' + str(random.choice(nodes).web_port.getHost().port),
-                headers=dict(Authorization='Basic ' + base64.b64encode('user/0:password')))
+                headers=dict(Authorization='Basic ' + base64.b64encode(b'user/0:password').decode('ascii')))
             blah = yield proxy.rpc_getwork()
             yield proxy.rpc_getwork(blah['data'])
             yield deferral.sleep(.05)
-            print i
-            print type(nodes[0].n.tracker.items[nodes[0].n.best_share_var.value])
+            print(i)
+            print(type(nodes[0].n.tracker.items[nodes[0].n.best_share_var.value]))
         
         # crawl web pages
         from p2pool import web
@@ -245,16 +265,16 @@ class Test(unittest.TestCase):
         web2_port = reactor.listenTCP(0, server.Site(web2_root))
         for name in web2_root.listNames() + ['web/' + x for x in web2_root.getChildWithDefault('web', None).listNames()]:
             if name in ['web/graph_data', 'web/share', 'web/share_data']: continue
-            print
-            print name
+            print()
+            print(name)
             try:
-                res = yield client.getPage('http://127.0.0.1:%i/%s' % (web2_port.getHost().port, name))
+                res = yield http.get_page('http://127.0.0.1:%i/%s' % (web2_port.getHost().port, name))
             except:
                 import traceback
                 traceback.print_exc()
             else:
-                print repr(res)[:100]
-            print
+                print(repr(res)[:100])
+            print()
         yield web2_port.stopListening()
         stop_event.happened()
         del web2_root

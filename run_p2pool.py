@@ -5,9 +5,10 @@ pid = str(os.getpid())
 pidfile = "/tmp/p2pool.pid"
 
 if os.path.isfile(pidfile):
-	print "%s already exists, exiting" % pidfile
+	print("%s already exists, exiting" % pidfile)
 	sys.exit()
-file(pidfile, 'w').write(pid) # write the pid to pidfile
+with open(pidfile, 'w') as f:
+	f.write(pid) # write the pid to pidfile
 
 try:
 	# Real code

@@ -36,8 +36,8 @@ VERSION_WARNING = lambda v: None
 BLOCK_MAX_SIZE = 4000000
 BLOCK_MAX_WEIGHT = 4000000
 ANNOUNCE_CHANNEL = '#p2pool-dfc' #irc plugin?
-IDENTIFIER = 'b032d5a8c6923410'.decode('hex')
-PREFIX = '1389c1ad3ef0b9b5'.decode('hex')
+IDENTIFIER = bytes.fromhex('b032d5a8c6923410')
+PREFIX = bytes.fromhex('1389c1ad3ef0b9b5')
 
 #PERSIST = True # SET THIS TO FALSE UNTIL THE SHARE CHAIN IS BOOTSTRAPPED
 PERSIST = False

@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from math import convertbits
+from .math import convertbits
 
 CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 
@@ -118,7 +118,7 @@ def valid_version(data):
     # Bit six is a multiplier
     if ver & 4:
         bits *= 2
-    if (len(converted) - 1) != (bits / 8):
+    if (len(converted) - 1) != (bits // 8):
         return False
     return True
 
@@ -168,8 +168,8 @@ def encode(prefix, ver, data):
     tmp = len(data) * 8
     if tmp > 256:
         dlen ^= 0x04
-        tmp /= 2
-    dlen += (tmp - 160) / 32
+        tmp //= 2
+    dlen += (tmp - 160) // 32
     ver += dlen
     bits = convertbits([ver] + data, 8, 5)
     ret = assemble(prefix, bits)

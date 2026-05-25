@@ -19,7 +19,7 @@ class Event(object):
         watch_id = self.watch(lambda *args: func(obj_ref(), *args))
         obj_ref = weakref.ref(obj, lambda _: self.unwatch(watch_id))
     def watch(self, func):
-        id = self.id_generator.next()
+        id = next(self.id_generator)
         self.observers[id] = func
         return id
     def unwatch(self, id):
@@ -37,7 +37,7 @@ class Event(object):
         
         once, self._once = self._once, None
         
-        for id, func in sorted(self.observers.iteritems()):
+        for id, func in sorted(self.observers.items()):
             try:
                 func(*event)
             except:
@@ -48,15 +48,36 @@ class Event(object):
     
     def get_deferred(self, timeout=None):
         once = self.once
-        df = defer.Deferred()
-        id1 = once.watch(lambda *event: df.callback(event))
+        watch_ids = []
+        delay = [None]
+
+        def cancel(df):
+            for watch_id in watch_ids[:]:
+                if watch_id in once.observers:
+                    once.unwatch(watch_id)
+            if delay[0] is not None and delay[0].active():
+                delay[0].cancel()
+
+        df = defer.Deferred(cancel)
+
+        def callback_once(*event):
+            if not df.called:
+                df.callback(event)
+
+        id1 = once.watch(callback_once)
+        watch_ids.append(id1)
         if timeout is not None:
             def do_timeout():
-                df.errback(failure.Failure(defer.TimeoutError('in Event.get_deferred')))
-                once.unwatch(id1)
-                once.unwatch(x)
-            delay = reactor.callLater(timeout, do_timeout)
-            x = once.watch(lambda *event: delay.cancel())
+                if not df.called:
+                    df.errback(failure.Failure(defer.TimeoutError('in Event.get_deferred')))
+            delay[0] = reactor.callLater(timeout, do_timeout)
+
+            def cancel_timeout(*event):
+                if delay[0] is not None and delay[0].active():
+                    delay[0].cancel()
+
+            x = once.watch(cancel_timeout)
+            watch_ids.append(x)
         return df
 
 class Variable(object):
@@ -91,13 +112,13 @@ class VariableDict(Variable):
         self.removed = Event()
     
     def add(self, values):
-        new_items = dict([item for item in values.iteritems() if not item[0] in self.value or self.value[item[0]] != item[1]])
+        new_items = dict([item for item in values.items() if not item[0] in self.value or self.value[item[0]] != item[1]])
         self.value.update(values)
         self.added.happened(new_items)
         # XXX call self.changed and self.transitioned
     
     def remove(self, values):
-        gone_items = dict([item for item in values.iteritems() if item[0] in self.value])
+        gone_items = dict([item for item in values.items() if item[0] in self.value])
         for key in gone_keys:
             del self.values[key]
         self.removed.happened(new_items)

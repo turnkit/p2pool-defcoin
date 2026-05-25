@@ -3,15 +3,22 @@ import collections
 class StringBuffer(object):
     'Buffer manager with great worst-case behavior'
     
-    def __init__(self, data=''):
-        self.buf = collections.deque([data])
-        self.buf_len = len(data)
+    def __init__(self, data=None):
+        self.buf = collections.deque()
+        self.buf_len = 0
+        self._bytes_mode = None
+        if data is not None:
+            self.buf.append(data)
+            self.buf_len = len(data)
+            self._bytes_mode = isinstance(data, (bytes, bytearray))
         self.pos = 0
     
     def __len__(self):
         return self.buf_len - self.pos
     
     def add(self, data):
+        if self._bytes_mode is None:
+            self._bytes_mode = isinstance(data, (bytes, bytearray))
         self.buf.append(data)
         self.buf_len += len(data)
     
@@ -29,10 +36,14 @@ class StringBuffer(object):
             
             data.append(seg)
             wants -= len(seg)
+        if not data:
+            return b'' if self._bytes_mode else ''
+        if isinstance(data[0], (bytes, bytearray)):
+            return b''.join(data)
         return ''.join(data)
 
 def _DataChunker(receiver):
-    wants = receiver.next()
+    wants = next(receiver)
     buf = StringBuffer()
     
     while True:
@@ -46,5 +57,5 @@ def DataChunker(receiver):
     (receiver) in response to the receiver yielding the size of data to wait on
     '''
     x = _DataChunker(receiver)
-    x.next()
+    next(x)
     return x.send

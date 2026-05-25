@@ -1,4 +1,4 @@
-from __future__ import division
+
 
 import itertools
 import random
@@ -8,8 +8,12 @@ from twisted.internet import defer, reactor
 from twisted.python import failure, log
 
 def sleep(t):
-    d = defer.Deferred(canceller=lambda d_: dc.cancel())
-    dc = reactor.callLater(t, d.callback, None)
+    dc = [None]
+    def cancel(_df):
+        if dc[0] is not None and dc[0].active():
+            dc[0].cancel()
+    d = defer.Deferred(canceller=cancel)
+    dc[0] = reactor.callLater(t, d.callback, None)
     return d
 
 def run_repeatedly(f, *args, **kwargs):
@@ -19,7 +23,8 @@ def run_repeatedly(f, *args, **kwargs):
         current_dc[0] = reactor.callLater(delay, step)
     step()
     def stop():
-        current_dc[0].cancel()
+        if current_dc[0] is not None and current_dc[0].active():
+            current_dc[0].cancel()
     return stop
 
 class RetrySilentlyException(Exception):
@@ -39,14 +44,14 @@ def retry(message='Error:', delay=3, max_retries=None, traceback=True):
             for i in itertools.count():
                 try:
                     result = yield func(*args, **kwargs)
-                except Exception, e:
+                except Exception as e:
                     if i == max_retries:
                         raise
                     if not isinstance(e, RetrySilentlyException):
                         if traceback:
                             log.err(None, message)
                         else:
-                            print >>sys.stderr, message, e
+                            print(message, e, file=sys.stderr)
                     yield sleep(delay)
                 else:
                     defer.returnValue(result)
@@ -189,10 +194,10 @@ class DeferredCacher(object):
                 self.waiting.pop(key).callback(None)
                 if fail.check(RetrySilentlyException):
                     return
-                print
-                print 'Error when requesting noncached value:'
+                print()
+                print('Error when requesting noncached value:')
                 fail.printTraceback()
-                print
+                print()
             self.func(key).addCallback(cb).addErrback(eb)
         if default is not self._nothing:
             return default
@@ -270,6 +275,8 @@ class RobustLoopingCall(object):
         self.func, self.args, self.kwargs = func, args, kwargs
         
         self.running = False
+        self._sleep_df = None
+        self._df = None
     
     def start(self, period):
         assert not self.running
@@ -284,10 +291,19 @@ class RobustLoopingCall(object):
                 self.func(*self.args, **self.kwargs)
             except:
                 log.err()
-            yield sleep(period)
+            if not self.running:
+                break
+            self._sleep_df = sleep(period)
+            try:
+                yield self._sleep_df
+            finally:
+                self._sleep_df = None
     
     def stop(self):
         assert self.running
         self.running = False
-        self._df.cancel()
+        if self._sleep_df is not None and not self._sleep_df.called:
+            self._sleep_df.cancel()
+        if self._df is not None and not self._df.called:
+            self._df.cancel()
         return self._df

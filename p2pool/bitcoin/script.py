@@ -1,31 +1,32 @@
 from p2pool.util import math, pack
-import cStringIO as StringIO
+from p2pool.util.py3 import bord, bchr, ensure_bytes
+import io
 
 def reads_nothing(f):
-    return None, f
+    return None
 def protoPUSH(length):
     return lambda f: f.read(length)
 def protoPUSHDATA(size_len):
     def _(f):
         length_str = f.read(size_len)
-        length = math.string_to_natural(length_str[::-1].lstrip(chr(0)))
+        length = math.string_to_natural(length_str[::-1].lstrip(b'\x00'))
         data = f.read(length)
         return data
     return _
 
 opcodes = {}
-for i in xrange(256):
+for i in range(256):
     opcodes[i] = 'UNK_' + str(i), reads_nothing
 
-opcodes[0] = 'PUSH', lambda f: ('', f)
-for i in xrange(1, 76):
+opcodes[0] = 'PUSH', lambda f: b''
+for i in range(1, 76):
     opcodes[i] = 'PUSH', protoPUSH(i)
 opcodes[76] = 'PUSH', protoPUSHDATA(1)
 opcodes[77] = 'PUSH', protoPUSHDATA(2)
 opcodes[78] = 'PUSH', protoPUSHDATA(4)
-opcodes[79] = 'PUSH', lambda f: ('\x81', f)
-for i in xrange(81, 97):
-    opcodes[i] = 'PUSH', lambda f, _i=i: (chr(_i - 80), f)
+opcodes[79] = 'PUSH', lambda f: b'\x81'
+for i in range(81, 97):
+    opcodes[i] = 'PUSH', lambda f, _i=i: bchr(_i - 80)
 
 opcodes[172] = 'CHECKSIG', reads_nothing
 opcodes[173] = 'CHECKSIGVERIFY', reads_nothing
@@ -33,10 +34,10 @@ opcodes[174] = 'CHECKMULTISIG', reads_nothing
 opcodes[175] = 'CHECKMULTISIGVERIFY', reads_nothing
 
 def parse(script):
-    f = StringIO.StringIO(script)
+    f = io.BytesIO(ensure_bytes(script))
     while pack.remaining(f):
         opcode_str = f.read(1)
-        opcode = ord(opcode_str)
+        opcode = bord(opcode_str)
         opcode_name, read_func = opcodes[opcode]
         opcode_arg = read_func(f)
         yield opcode_name, opcode_arg
@@ -53,29 +54,31 @@ def get_sigop_count(script):
 def create_push_script(datums): # datums can be ints or strs
     res = []
     for datum in datums:
-        if isinstance(datum, (int, long)):
+        if isinstance(datum, int):
             if datum == -1 or 1 <= datum <= 16:
-                res.append(chr(datum + 80))
+                res.append(bchr(datum + 80))
                 continue
             negative = datum < 0
             datum = math.natural_to_string(abs(datum))
-            if datum and ord(datum[0]) & 128:
-                datum = '\x00' + datum
+            if datum and bord(datum[0]) & 128:
+                datum = b'\x00' + datum
             if negative:
-                datum = chr(ord(datum[0]) + 128) + datum[1:]
+                datum = bchr(bord(datum[0]) + 128) + datum[1:]
             datum = datum[::-1]
+        else:
+            datum = ensure_bytes(datum)
         if len(datum) < 76:
-            res.append(chr(len(datum)))
+            res.append(bchr(len(datum)))
         elif len(datum) <= 0xff:
-            res.append(76)
-            res.append(chr(len(datum)))
+            res.append(bchr(76))
+            res.append(bchr(len(datum)))
         elif len(datum) <= 0xffff:
-            res.append(77)
+            res.append(bchr(77))
             res.append(pack.IntType(16).pack(len(datum)))
         elif len(datum) <= 0xffffffff:
-            res.append(78)
+            res.append(bchr(78))
             res.append(pack.IntType(32).pack(len(datum)))
         else:
             raise ValueError('string too long')
         res.append(datum)
-    return ''.join(res)
+    return b''.join(res)

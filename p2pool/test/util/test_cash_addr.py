@@ -368,7 +368,7 @@ class IntegrationTest(unittest.TestCase):
 
     @staticmethod
     def to_byte_array(data):
-        return [ord(x) for x in data]
+        return [x if isinstance(x, int) else ord(x) for x in data]
 
     def test_old_and_new_addresses_match(self):
         for oaddr, naddr in self.OLD_NEW_ADDRESS:

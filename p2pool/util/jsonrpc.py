@@ -1,14 +1,17 @@
-from __future__ import division
+
 
 import json
+from io import BytesIO
 import weakref
 
-from twisted.internet import defer
+from twisted.internet import defer, reactor
 from twisted.protocols import basic
 from twisted.python import failure, log
 from twisted.web import client, error
+from twisted.web.http_headers import Headers
 
 from p2pool.util import deferral, deferred_resource, memoize
+from p2pool.util.py3 import ensure_bytes, ensure_text
 
 class Error(Exception):
     def __init__(self, code, message, data=None):
@@ -58,7 +61,7 @@ def _handle(data, provider, preargs=(), response_handler=None):
                 try:
                     req = json.loads(data)
                 except Exception:
-                    raise Error_for_code(-32700)(u'Parse error')
+                    raise Error_for_code(-32700)('Parse error')
                 
                 if 'result' in req or 'error' in req:
                     response_handler(req['id'], req['result'] if 'error' not in req or req['error'] is None else
@@ -67,20 +70,20 @@ def _handle(data, provider, preargs=(), response_handler=None):
                 
                 id_ = req.get('id', None)
                 method = req.get('method', None)
-                if not isinstance(method, basestring):
-                    raise Error_for_code(-32600)(u'Invalid Request')
+                if not isinstance(method, str):
+                    raise Error_for_code(-32600)('Invalid Request')
                 params = req.get('params', [])
                 if not isinstance(params, list):
-                    raise Error_for_code(-32600)(u'Invalid Request')
+                    raise Error_for_code(-32600)('Invalid Request')
                 
                 for service_name in method.split('.')[:-1]:
                     provider = getattr(provider, 'svc_' + service_name, None)
                     if provider is None:
-                        raise Error_for_code(-32601)(u'Service not found')
+                        raise Error_for_code(-32601)('Service not found')
                 
                 method_meth = getattr(provider, 'rpc_' + method.split('.')[-1], None)
                 if method_meth is None:
-                    raise Error_for_code(-32601)(u'Method not found')
+                    raise Error_for_code(-32601)('Method not found')
                 
                 result = yield method_meth(*list(preargs) + list(params))
                 error = None
@@ -88,8 +91,8 @@ def _handle(data, provider, preargs=(), response_handler=None):
                 raise
             except Exception:
                 log.err(None, 'Squelched JSON error:')
-                raise Error_for_code(-32099)(u'Unknown error')
-        except Error, e:
+                raise Error_for_code(-32099)('Unknown error')
+        except Error as e:
             result = None
             error = e._to_obj()
         
@@ -105,27 +108,34 @@ def _handle(data, provider, preargs=(), response_handler=None):
 @defer.inlineCallbacks
 def _http_do(url, headers, timeout, method, params):
     id_ = 0
+    payload = ensure_bytes(json.dumps({
+        'jsonrpc': '2.0',
+        'method': method,
+        'params': params,
+        'id': id_,
+    }), 'utf-8')
+    request_headers = dict(headers, **{'Content-Type': 'application/json'})
+    agent_headers = Headers(dict(
+        (ensure_bytes(k, 'ascii'), [ensure_bytes(v, 'ascii')])
+        for k, v in request_headers.items()
+    ))
     
     try:
-        data = yield client.getPage(
-            url=url,
-            method='POST',
-            headers=dict(headers, **{'Content-Type': 'application/json'}),
-            postdata=json.dumps({
-                'jsonrpc': '2.0',
-                'method': method,
-                'params': params,
-                'id': id_,
-            }),
-            timeout=timeout,
+        agent = client.Agent(reactor)
+        response = yield agent.request(
+            b'POST',
+            ensure_bytes(url, 'ascii'),
+            agent_headers,
+            client.FileBodyProducer(BytesIO(payload)),
         )
-    except error.Error, e:
+        data = yield client.readBody(response)
+    except error.Error as e:
         try:
             resp = json.loads(e.response)
         except:
             raise e
     else:
-        resp = json.loads(data)
+        resp = json.loads(ensure_text(data, 'utf-8'))
     
     if resp['id'] != id_:
         raise ValueError('invalid id')
@@ -144,7 +154,8 @@ class HTTPServer(deferred_resource.DeferredResource):
         data = yield _handle(request.content.read(), self._provider, preargs=[request])
         assert data is not None
         request.setHeader('Content-Type', 'application/json')
-        request.setHeader('Content-Length', len(data))
+        data = ensure_bytes(data, 'utf-8')
+        request.setHeader('Content-Length', str(len(data)))
         request.write(data)
 
 class LineBasedPeer(basic.LineOnlyReceiver):

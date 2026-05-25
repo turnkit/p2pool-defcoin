@@ -2,16 +2,17 @@
 Representation of a getwork request/reply
 '''
 
-from __future__ import division
+
 
 from . import data as bitcoin_data
 from . import sha256
 from p2pool.util import pack
+from p2pool.util.py3 import bytes_to_hex, hex_to_bytes
 
 def _swap4(s):
     if len(s) % 4:
         raise ValueError()
-    return ''.join(s[x:x+4][::-1] for x in xrange(0, len(s), 4))
+    return b''.join(s[x:x+4][::-1] for x in range(0, len(s), 4))
 
 class BlockAttempt(object):
     def __init__(self, version, previous_block, merkle_root, timestamp, bits, share_target):
@@ -29,7 +30,7 @@ class BlockAttempt(object):
         return not (self == other)
     
     def __repr__(self):
-        return 'BlockAttempt(%s)' % (', '.join('%s=%r' % (k, v) for k, v in self.__dict__.iteritems()),)
+        return 'BlockAttempt(%s)' % (', '.join('%s=%r' % (k, v) for k, v in self.__dict__.items()),)
     
     def getwork(self, **extra):
         if 'data' in extra or 'hash1' in extra or 'target' in extra or 'midstate' in extra:
@@ -45,10 +46,10 @@ class BlockAttempt(object):
         ))
         
         getwork = {
-            'data': _swap4(block_data).encode('hex') + '000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000',
+            'data': bytes_to_hex(_swap4(block_data)) + '000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000',
             'hash1': '00000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000010000',
-            'target': pack.IntType(256).pack(self.share_target).encode('hex'),
-            'midstate': _swap4(sha256.process(sha256.initial_state, block_data[:64])).encode('hex'),
+            'target': bytes_to_hex(pack.IntType(256).pack(self.share_target)),
+            'midstate': bytes_to_hex(_swap4(sha256.process(sha256.initial_state, block_data[:64]))),
         }
         
         getwork = dict(getwork)
@@ -66,7 +67,7 @@ class BlockAttempt(object):
             merkle_root=attrs['merkle_root'],
             timestamp=attrs['timestamp'],
             bits=attrs['bits'],
-            share_target=pack.IntType(256).unpack(getwork['target'].decode('hex')),
+            share_target=pack.IntType(256).unpack(hex_to_bytes(getwork['target'])),
         )
     
     def update(self, **kwargs):
@@ -75,4 +76,4 @@ class BlockAttempt(object):
         return self.__class__(**d)
 
 def decode_data(data):
-    return bitcoin_data.block_header_type.unpack(_swap4(data.decode('hex'))[:80])
+    return bitcoin_data.block_header_type.unpack(_swap4(hex_to_bytes(data))[:80])
