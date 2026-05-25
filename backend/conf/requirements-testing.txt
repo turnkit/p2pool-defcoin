@@ -1,0 +1,2 @@
+coverage>=7.14,<8
+unittest-xml-reporting>=4.0,<5

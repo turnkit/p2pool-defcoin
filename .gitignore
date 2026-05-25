@@ -1,16 +1,23 @@
 *.pyc
 *.pyo
 *~
+__pycache__/
 
 /data/
 /litecoin_scrypt/build/
+/backend/litecoin_scrypt/build/
 /_trial_temp*
+_trial_temp*/
 Makefile.local
 .cache/
+.pytest_cache/
+.ruff_cache/
 .pkglist
 .pyenv/
 .coverage
 build/
+backend/build/
 ltc_scrypt.so
+backend/ltc_scrypt.so
 
 .DS_Store

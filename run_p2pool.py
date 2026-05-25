@@ -1,17 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+"""Compatibility launcher for the backend package layout."""
+
 import os
+import runpy
 import sys
-pid = str(os.getpid())
-pidfile = "/tmp/p2pool.pid"
 
-if os.path.isfile(pidfile):
-	print "%s already exists, exiting" % pidfile
-	sys.exit()
-file(pidfile, 'w').write(pid) # write the pid to pidfile
 
-try:
-	# Real code
-	from p2pool import main
-	main.run()
-finally:
-	os.unlink(pidfile) # remove the pid lock file
+ROOT = os.path.dirname(os.path.abspath(__file__))
+BACKEND = os.path.join(ROOT, "backend")
+
+sys.path.insert(0, BACKEND)
+runpy.run_path(os.path.join(BACKEND, "run_p2pool.py"), run_name="__main__")

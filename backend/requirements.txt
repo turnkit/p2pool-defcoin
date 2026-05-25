@@ -1,0 +1,4 @@
+Twisted>=26.4.0,<27
+pyOpenSSL>=26.2.0,<27
+defusedxml>=0.7.1,<1
+service-identity>=24.2.0,<25
