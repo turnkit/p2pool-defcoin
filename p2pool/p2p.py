@@ -13,6 +13,23 @@ from p2pool import data as p2pool_data
 from p2pool.bitcoin import data as bitcoin_data
 from p2pool.util import deferral, p2protocol, pack, variable
 
+_HANDSHAKE_LOG_INTERVAL = 300
+_HANDSHAKE_LOG_STATE = {}
+
+def _rate_limited_handshake_log(kind, host, message, interval=_HANDSHAKE_LOG_INTERVAL):
+    now = time.time()
+    key = kind, host
+    last, suppressed = _HANDSHAKE_LOG_STATE.get(key, (0, 0))
+    if now - last >= interval:
+        if suppressed:
+            elapsed = max(1, now - last)
+            print '%s (suppressed %i similar %s messages in the last %.0f seconds)' % (message, suppressed, kind, elapsed)
+        else:
+            print message
+        _HANDSHAKE_LOG_STATE[key] = now, 0
+    else:
+        _HANDSHAKE_LOG_STATE[key] = last, suppressed + 1
+
 class PeerMisbehavingError(Exception):
     pass
 
@@ -147,10 +164,22 @@ class Protocol(p2protocol.Protocol):
         ('best_share_hash', pack.PossiblyNoneType(0, pack.IntType(256))),
     ])
     def handle_version(self, version, services, addr_to, addr_from, nonce, sub_version, mode, best_share_hash):
-        print "Peer %s:%s says protocol version is %s, client version %s" % (addr_from['address'], addr_from['port'], version, sub_version)
+        peer_host, peer_port = self.addr
+        advertised_host, advertised_port = addr_from['address'], addr_from['port']
         if self.other_version is not None:
+            _rate_limited_handshake_log(
+                'repeat-version',
+                peer_host,
+                'Rejecting P2Pool peer %s:%i: sent more than one version message' % (peer_host, peer_port),
+            )
             raise PeerMisbehavingError('more than one version message')
         if version < getattr(self.node.net, 'MINIMUM_PROTOCOL_VERSION', 1400):
+            _rate_limited_handshake_log(
+                'old-version',
+                peer_host,
+                'Rejecting P2Pool peer %s:%i: protocol version %s is below minimum %s, client version %r' % (
+                    peer_host, peer_port, version, getattr(self.node.net, 'MINIMUM_PROTOCOL_VERSION', 1400), sub_version),
+            )
             raise PeerMisbehavingError('peer too old')
         
         self.other_version = version
@@ -158,12 +187,24 @@ class Protocol(p2protocol.Protocol):
         self.other_services = services
         
         if nonce == self.node.nonce:
+            _rate_limited_handshake_log(
+                'self-connection',
+                peer_host,
+                'Rejecting P2Pool peer %s:%i: remote nonce matches this node' % (peer_host, peer_port),
+            )
             raise PeerMisbehavingError('was connected to self')
         if nonce in self.node.peers:
-            if p2pool.DEBUG:
-                print 'Detected duplicate connection, disconnecting from %s:%i' % self.addr
+            existing = self.node.peers[nonce]
+            _rate_limited_handshake_log(
+                'duplicate-peer',
+                peer_host,
+                'Duplicate P2Pool peer handshake from %s:%i advertised as %s:%s, protocol %s, client version %r; already connected as %s:%i, disconnecting duplicate' % (
+                    peer_host, peer_port, advertised_host, advertised_port, version, sub_version, existing.addr[0], existing.addr[1]),
+            )
             self.disconnect()
             return
+        if p2pool.DEBUG:
+            print "Peer %s:%s says protocol version is %s, client version %s" % (advertised_host, advertised_port, version, sub_version)
         
         self.nonce = nonce
         self.connected2 = True

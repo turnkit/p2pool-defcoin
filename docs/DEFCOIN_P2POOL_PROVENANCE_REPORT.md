@@ -156,7 +156,9 @@ The Defcoin server remains on the jtoomim-era share formats:
 
 Current dc903 addition:
 
-- Documents the current donation script situation. The live payout/donation percentage is effectively zero, but the code comments explain why a simple address-script replacement is not enough without converting to the pay-to-pubkey shape this fork expects.
+- Documents and patches the legacy donation-script situation. Share version `36`
+  removes the spendable lost-key donation-address output from newly mined
+  templates while preserving validation for older shares.
 
 ### Peer Management: `p2pool/p2p.py`
 
@@ -205,7 +207,11 @@ Plain English impact: the p2pool web surface is operator-facing and customized f
 
 ## What Is Not Changed
 
-The dc903 p2pool branch does not change Defcoin consensus rules. It does not change block validation, transaction validation, wallet rules, or payout math as a consensus fork. It changes p2pool network compatibility, operational behavior, and presentation.
+The dc903 p2pool branch does not change Defcoin consensus rules. It does not
+change Defcoin block validation, transaction validation, or wallet rules. It
+does change P2Pool share-template behavior in version `36` by removing the
+legacy donation-address dust output, so cooperating Defcoin P2Pool operators
+should update together.
 
 ## Open Review Items
 
@@ -218,10 +224,8 @@ The dc903 p2pool branch does not change Defcoin consensus rules. It does not cha
 
 ## Evidence Captured
 
-Local comparison artifacts are stored outside this repository at:
-
-- `/Volumes/TB5_4TB/d/litecoincore/Defcoin Core Nu/p2pool-provenance/dc903-live-diff-summary.txt`
-- `/Volumes/TB5_4TB/d/litecoincore/Defcoin Core Nu/p2pool-provenance/dc903-live-vs-hellbyte-dc1b4af.patch`
+Local comparison artifacts were used to prepare this report and are intentionally
+not published in the repository.
 
 Server source path used for comparison:
 

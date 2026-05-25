@@ -65,26 +65,31 @@ def is_segwit_activated(version, net):
     segwit_activation_version = getattr(net, 'SEGWIT_ACTIVATION_VERSION', 0)
     return version >= segwit_activation_version and segwit_activation_version > 0
 
-# JP's legacy donation address remains active because this fork bakes the
-# donation script shape into share serialization, and donation_proportion is
-# currently 0.0 anyway.
-DONATION_SCRIPT = '4104ffd03de44a6e11b9917f3a29f9443283d9871c9d743ef30d5eddcd37094b64d1b3d8090496b53256786bf5c82932ec23c3b74d9f05a6f95a8b5529352656664bac'.decode('hex')
-# Attempted replacement for DBbKV7upy41hV42dU895m4NcXn9AvHXUz9. Do not enable
-# until it is converted to the pay-to-pubkey form this fork expects.
-# DONATION_SCRIPT = '76a91446c6605b4472d27f6e844281033b46e18804893a88ac'.decode('hex')
-def donation_script_to_address(net):
+# Old P2Pool Defcoin shares used JP's P2PK developer donation script. Version
+# 36 keeps old shares verifiable, but removes the spendable donation output from
+# newly mined share templates.
+LEGACY_DONATION_SCRIPT = '4104ffd03de44a6e11b9917f3a29f9443283d9871c9d743ef30d5eddcd37094b64d1b3d8090496b53256786bf5c82932ec23c3b74d9f05a6f95a8b5529352656664bac'.decode('hex')
+DONATION_SCRIPT = LEGACY_DONATION_SCRIPT
+DUSTFIX_PADDING_SCRIPT = '\x6a\x40' + 'Defcoin P2Pool dustfix v36'.ljust(64, '\0')
+
+def make_gentx_before_refhash(fixed_tail_script):
+    return pack.VarStrType().pack(fixed_tail_script) + pack.IntType(64).pack(0) + pack.VarStrType().pack('\x6a\x28' + pack.IntType(256).pack(0) + pack.IntType(64).pack(0))[:3]
+
+def donation_script_to_address(net, script=DONATION_SCRIPT):
     try:
         return bitcoin_data.script2_to_address(
-                DONATION_SCRIPT, net.PARENT.ADDRESS_VERSION, -1, net.PARENT)
+                script, net.PARENT.ADDRESS_VERSION, -1, net.PARENT)
     except ValueError:
         return bitcoin_data.script2_to_address(
-                DONATION_SCRIPT, net.PARENT.ADDRESS_P2SH_VERSION, -1, net.PARENT)
+                script, net.PARENT.ADDRESS_P2SH_VERSION, -1, net.PARENT)
 
 class BaseShare(object):
     VERSION = 0
     VOTING_VERSION = 0
     SUCCESSOR = None
     MINIMUM_PROTOCOL_VERSION = 1400
+    PAYS_LEGACY_DONATION = True
+    FIXED_TAIL_SCRIPT = LEGACY_DONATION_SCRIPT
     
     small_block_header_type = pack.ComposedType([
         ('version', pack.VarIntType()),
@@ -97,7 +102,7 @@ class BaseShare(object):
     share_type = None
     ref_type = None
 
-    gentx_before_refhash = pack.VarStrType().pack(DONATION_SCRIPT) + pack.IntType(64).pack(0) + pack.VarStrType().pack('\x6a\x28' + pack.IntType(256).pack(0) + pack.IntType(64).pack(0))[:3]
+    gentx_before_refhash = make_gentx_before_refhash(FIXED_TAIL_SCRIPT)
 
     gentx_size = 50000 # conservative estimate, will be overwritten during execution
     gentx_weight = 200000
@@ -270,15 +275,18 @@ class BaseShare(object):
                     -1, net.PARENT)
         else:
             this_address = share_data['address']
-        donation_address = donation_script_to_address(net)
+        donation_address = donation_script_to_address(net) if cls.PAYS_LEGACY_DONATION else None
         # 0.5% goes to block finder
         amounts[this_address] = amounts.get(this_address, 0) \
                                 + share_data['subsidy']//200
-        # all that's left over is the donation weight and some extra
-        # satoshis due to rounding
-        amounts[donation_address] = amounts.get(donation_address, 0) \
-                                    + share_data['subsidy'] \
-                                    - sum(amounts.itervalues())
+        # Old shares paid donation weight and rounding remainder to the legacy
+        # P2PK developer donation address. New dust-fixed shares keep the same
+        # total coinbase value but route the remainder to the block finder.
+        remainder = share_data['subsidy'] - sum(amounts.itervalues())
+        if cls.PAYS_LEGACY_DONATION:
+            amounts[donation_address] = amounts.get(donation_address, 0) + remainder
+        else:
+            amounts[this_address] = amounts.get(this_address, 0) + remainder
         if cls.VERSION < 34 and 'pubkey_hash' not in share_data:
             share_data['pubkey_hash'], _, _ = bitcoin_data.address_to_pubkey_hash(
                     this_address, net.PARENT)
@@ -289,7 +297,9 @@ class BaseShare(object):
 
         # block length limit, unlikely to ever be hit
         dests = sorted(amounts.iterkeys(), key=lambda address: (
-            address == donation_address, amounts[address], address))[-4000:]
+            donation_address is not None and address == donation_address,
+            amounts[address],
+            address))[-4000:]
         if len(dests) >= 200:
             print "found %i payment dests. Antminer S9s may crash when this is close to 226." % len(dests)
 
@@ -340,7 +350,10 @@ class BaseShare(object):
         payouts = [dict(value=amounts[addr],
                         script=bitcoin_data.address_to_script2(addr, net.PARENT)
                         ) for addr in dests if amounts[addr] and addr != donation_address]
-        payouts.append({'script': DONATION_SCRIPT, 'value': amounts[donation_address]})
+        if cls.PAYS_LEGACY_DONATION:
+            payouts.append({'script': DONATION_SCRIPT, 'value': amounts[donation_address]})
+        else:
+            payouts.append({'script': cls.FIXED_TAIL_SCRIPT, 'value': 0})
 
         gentx = dict(
             version=1,
@@ -638,10 +651,19 @@ class BaseShare(object):
             return None # not all txs present
         return dict(header=self.header, txs=[self.check(tracker, other_txs)] + other_txs)
 
+class DonationDustFixedShare(BaseShare):
+    VERSION = 36
+    VOTING_VERSION = 36
+    SUCCESSOR = None
+    MINIMUM_PROTOCOL_VERSION = 3600
+    PAYS_LEGACY_DONATION = False
+    FIXED_TAIL_SCRIPT = DUSTFIX_PADDING_SCRIPT
+    gentx_before_refhash = make_gentx_before_refhash(FIXED_TAIL_SCRIPT)
+
 class PaddingBugfixShare(BaseShare):
     VERSION=35
     VOTING_VERSION = 35
-    SUCCESSOR = None
+    SUCCESSOR = DonationDustFixedShare
     MINIMUM_PROTOCOL_VERSION = 3500
 
 class SegwitMiningShare(BaseShare):
@@ -667,7 +689,7 @@ class Share(BaseShare):
     SUCCESSOR = PaddingBugfixShare
 
 
-share_versions = {s.VERSION:s for s in [PaddingBugfixShare, SegwitMiningShare, NewShare, PreSegwitShare, Share]}
+share_versions = {s.VERSION:s for s in [DonationDustFixedShare, PaddingBugfixShare, SegwitMiningShare, NewShare, PreSegwitShare, Share]}
 
 class WeightsSkipList(forest.TrackerSkipList):
     # share_count, weights, total_weight
@@ -940,8 +962,13 @@ def get_user_stale_props(tracker, share_hash, lookbehind, net):
 def get_expected_payouts(tracker, best_share_hash, block_target, subsidy, net):
     weights, total_weight, donation_weight = tracker.get_cumulative_weights(best_share_hash, min(tracker.get_height(best_share_hash), net.REAL_CHAIN_LENGTH), 65535*net.SPREAD*bitcoin_data.target_to_average_attempts(block_target))
     res = dict((script, subsidy*weight//total_weight) for script, weight in weights.iteritems())
-    donation_addr = donation_script_to_address(net)
-    res[donation_addr] = res.get(donation_addr, 0) + subsidy - sum(res.itervalues())
+    best_share = tracker.items[best_share_hash]
+    remainder = subsidy - sum(res.itervalues())
+    if type(best_share).PAYS_LEGACY_DONATION:
+        donation_addr = donation_script_to_address(net)
+        res[donation_addr] = res.get(donation_addr, 0) + remainder
+    else:
+        res[best_share.address] = res.get(best_share.address, 0) + remainder
     return res
 
 def get_desired_version_counts(tracker, best_share_hash, dist):

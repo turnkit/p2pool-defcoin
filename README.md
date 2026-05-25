@@ -43,6 +43,33 @@ answered with the magic it used. `--allow-obsolete-bitcoind` is currently needed
 because this old Python 2 P2Pool fork has hard-coded softfork expectations that
 do not line up cleanly with Defcoin Core Nu's Litecoin-derived RPC reporting.
 
+Defcoin P2Pool v36 dust fix:
+-------------------------
+This fork removes the old P2Pool developer donation-address dust output for
+newly mined Defcoin P2Pool shares. The change is a P2Pool share-template update,
+not a Defcoin blockchain hard fork.
+
+The previous template always placed any donation weight and rounding remainder
+into JP's legacy P2PK donation script, which appears on-chain as
+`DQ8AwqR2XJE9G5dSEfspJYH7Spre85dj6L`. Defcoin share version `36` keeps older
+shares verifiable, then switches new shares to a zero-value OP_RETURN padding
+output and routes the spendable remainder to the block finder instead of the
+lost-key donation address.
+
+Defcoin P2Pool operators should update together. The relevant code is in:
+
+* `p2pool/data.py`: `DonationDustFixedShare`, `DUSTFIX_PADDING_SCRIPT`,
+  coinbase payout construction, and expected payout calculation.
+* `p2pool/work.py`: share version 36 stops recording author-donation weight in
+  newly generated shares.
+* `p2pool/main.py`: startup output notes the disabled developer donation output
+  after share version 36 activation.
+
+If coordinating with another Defcoin P2Pool operator, ask them to pull this
+version and restart once both pools are ready. The parent-chain Defcoin blocks
+remain valid either way; incompatible old P2Pool share-template nodes simply
+should not continue sharing the same P2Pool sharechain after version 36 wins.
+
 
 All
 -------------------------
@@ -67,6 +94,34 @@ FYI you can get defcoin addr with defcoin-cli listreceivedbyaddress 0 true
 Run for additional options.
 
     python run_p2pool.py --help
+
+FAQ:
+-------------------------
+
+### Where is the public pool fee wallet set?
+
+The public worker fee is controlled by two command-line options:
+
+    python run_p2pool.py --net defcoin -a YOURADDR --fee 1.5 ...
+
+`-a YOURADDR` is the node operator/default payout address. When `--fee` is
+greater than zero, P2Pool occasionally assigns worker shares to that operator
+address instead of the miner's username payout address. For example, `--fee 1.5`
+means a 1.5% public worker fee.
+
+On a systemd server deployment, the live values are usually in the service file:
+
+    systemctl cat p2pool-defcoin
+
+The dc903 deployment currently uses `-a DBbKV7upy41hV42dU895m4NcXn9AvHXUz9`
+with `--fee 1.5`. The fee can also be checked from the pool API:
+
+    curl http://127.0.0.1:13372/fee
+
+This public worker fee is separate from P2Pool's legacy developer donation
+script. Changing `-a` or `--fee` does not remove the tiny legacy donation-script
+dust output from old P2Pool share templates. Share version `36` removes that
+spendable donation-address output for newly mined templates.
 
 
 Example commands for running your miners:

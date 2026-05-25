@@ -312,6 +312,8 @@ def main(args, net, datadir_path, merged_urls, worker_endpoint):
         # done!
         print 'Started successfully!'
         print 'Go to http://127.0.0.1:%i/ to view graphs and statistics!' % (worker_endpoint[1],)
+        if getattr(p2pool_data.PaddingBugfixShare, 'SUCCESSOR', None) is p2pool_data.DonationDustFixedShare:
+            print '''P2Pool developer donation output is disabled after Defcoin share version 36 activation.'''
         if args.donation_percentage > 1.1:
             print '''Donating %.1f%% of work towards P2Pool's development. Thanks for the tip!''' % (args.donation_percentage,)
         elif args.donation_percentage < .9:
