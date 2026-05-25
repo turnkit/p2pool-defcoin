@@ -22,6 +22,7 @@ from nattraverso import portmapper, ipdiscover
 from .bitcoin import p2p as bitcoin_p2p, data as bitcoin_data
 from .bitcoin import stratum, worker_interface, helper
 from .util import fixargparse, jsonrpc, variable, deferral, math, logging, switchprotocol
+from .util.py3 import ensure_bytes
 from . import networks, web, work
 import p2pool, p2pool.data as p2pool_data, p2pool.node as p2pool_node
 
@@ -102,7 +103,9 @@ def main(args, net, datadir_path, merged_urls, worker_endpoint):
         # connect to bitcoind over JSON-RPC and do initial getmemorypool
         url = '%s://%s:%i/' % ('https' if args.bitcoind_rpc_ssl else 'http', args.bitcoind_address, args.bitcoind_rpc_port)
         print('''Testing bitcoind RPC connection to '%s' with username '%s'...''' % (url, args.bitcoind_rpc_username))
-        bitcoind = jsonrpc.HTTPProxy(url, dict(Authorization='Basic ' + base64.b64encode(args.bitcoind_rpc_username + ':' + args.bitcoind_rpc_password)), timeout=30)
+        rpc_auth = '%s:%s' % (args.bitcoind_rpc_username, args.bitcoind_rpc_password)
+        rpc_auth_header = 'Basic ' + base64.b64encode(ensure_bytes(rpc_auth, 'utf-8')).decode('ascii')
+        bitcoind = jsonrpc.HTTPProxy(url, dict(Authorization=rpc_auth_header), timeout=30)
         yield helper.check(bitcoind, net, args)
         temp_work = yield helper.getwork(bitcoind)
         
@@ -127,8 +130,8 @@ def main(args, net, datadir_path, merged_urls, worker_endpoint):
             address_path = os.path.join(datadir_path, 'cached_payout_address')
             
             if os.path.exists(address_path):
-                with open(address_path, 'rb') as f:
-                    address = f.read().strip('\r\n')
+                with open(address_path, encoding='utf-8') as f:
+                    address = f.read().strip()
                 print('    Loaded cached address: %s...' % (address,))
             else:
                 address = None
@@ -143,7 +146,7 @@ def main(args, net, datadir_path, merged_urls, worker_endpoint):
                 print('    Getting payout address from bitcoind...')
                 address = yield deferral.retry('Error getting payout address from bitcoind:', 5)(lambda: bitcoind.rpc_getaccountaddress('p2pool'))()
 
-            with open(address_path, 'wb') as f:
+            with open(address_path, 'w', encoding='utf-8') as f:
                 f.write(address)
 
             my_address = address
@@ -232,7 +235,7 @@ def main(args, net, datadir_path, merged_urls, worker_endpoint):
         addrs = {}
         if os.path.exists(os.path.join(datadir_path, 'addrs')):
             try:
-                with open(os.path.join(datadir_path, 'addrs'), 'rb') as f:
+                with open(os.path.join(datadir_path, 'addrs'), encoding='utf-8') as f:
                     addrs.update(dict((tuple(k), v) for k, v in json.loads(f.read())))
             except:
                 print('error parsing addrs', file=sys.stderr)
@@ -263,7 +266,7 @@ def main(args, net, datadir_path, merged_urls, worker_endpoint):
         node.p2p_node.start()
         
         def save_addrs():
-            with open(os.path.join(datadir_path, 'addrs'), 'wb') as f:
+            with open(os.path.join(datadir_path, 'addrs'), 'w', encoding='utf-8') as f:
                 f.write(json.dumps(list(node.p2p_node.addr_store.items())))
         deferral.RobustLoopingCall(save_addrs).start(60)
         
