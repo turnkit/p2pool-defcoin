@@ -4,17 +4,18 @@ import os
 import sys
 
 from twisted.python import log
+from p2pool.util.py3 import ensure_text
 
 class EncodeReplacerPipe(object):
     def __init__(self, inner_file):
         self.inner_file = inner_file
         self.softspace = 0
     def write(self, data):
-        if isinstance(data, str):
+        if isinstance(data, bytes):
             try:
-                data = data.encode(self.inner_file.encoding, 'replace')
+                data = data.decode(self.inner_file.encoding, 'replace')
             except:
-                data = data.encode('ascii', 'replace')
+                data = data.decode('ascii', 'replace')
         self.inner_file.write(data)
     def flush(self):
         self.inner_file.flush()
@@ -34,7 +35,7 @@ class LogFile(object):
         if length > 100*1000*1000:
             f.seek(-1000*1000, os.SEEK_END)
             while True:
-                if f.read(1) in ('', '\n'):
+                if f.read(1) in (b'', b'\n'):
                     break
             data = f.read()
             f.close()
@@ -43,6 +44,7 @@ class LogFile(object):
         f.close()
         self.inner_file = codecs.open(self.filename, 'a', 'utf-8')
     def write(self, data):
+        data = ensure_text(data, 'utf-8')
         self.inner_file.write(data)
     def flush(self):
         self.inner_file.flush()
@@ -51,6 +53,7 @@ class TeePipe(object):
     def __init__(self, outputs):
         self.outputs = outputs
     def write(self, data):
+        data = ensure_text(data, 'utf-8')
         for output in self.outputs:
             output.write(data)
     def flush(self):
@@ -63,6 +66,7 @@ class TimestampingPipe(object):
         self.buf = ''
         self.softspace = 0
     def write(self, data):
+        data = ensure_text(data, 'utf-8')
         buf = self.buf + data
         lines = buf.split('\n')
         for line in lines[:-1]:
@@ -77,6 +81,7 @@ class AbortPipe(object):
         self.inner_file = inner_file
         self.softspace = 0
     def write(self, data):
+        data = ensure_text(data, 'utf-8')
         try:
             self.inner_file.write(data)
         except:
@@ -93,6 +98,7 @@ class PrefixPipe(object):
         self.buf = ''
         self.softspace = 0
     def write(self, data):
+        data = ensure_text(data, 'utf-8')
         buf = self.buf + data
         lines = buf.split('\n')
         for line in lines[:-1]:
