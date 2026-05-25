@@ -213,15 +213,6 @@ does change P2Pool share-template behavior in version `36` by removing the
 legacy donation-address dust output, so cooperating Defcoin P2Pool operators
 should update together.
 
-## Open Review Items
-
-1. Decide whether the Turnkit repository should track only the deployed dc903 server state or also carry planned p2pool experiments.
-2. Add the systemd unit and README files that live outside the repository if we want fully reproducible deployment from GitHub.
-   The current dc903 service uses `DEFCOIN_P2POOL_USE_NEW_MAGIC=1` and `--allow-obsolete-bitcoind`.
-3. Consider replacing the Python 2 runtime long-term. This fork is operational but old.
-4. Compare against modern p2poolv2 separately before attempting any interoperability claims.
-5. Review whether the customized web UI should be kept in this repository or split into a separate UI layer.
-
 ## Evidence Captured
 
 Local comparison artifacts were used to prepare this report and are intentionally

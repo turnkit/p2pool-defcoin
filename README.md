@@ -2,6 +2,9 @@ Requirements:
 =========================
 To use P2Pool, you must be running your own local defcoind. It takes a while to sync so get that started first.
 
+For the recommended modern Defcoin full-node wallet/source tree, see
+https://github.com/defcoincore/Defcoin-Core-Nu.
+
 
 Generic:
 * defcoind >=1.0.0
@@ -159,7 +162,7 @@ Probably need to open firewall on pool computer to MININGPORT.
 If you are behind a NAT, you should enable TCP port forwarding on your router. Forward port MININGPORT to the host running P2Pool.
 
 
-NOTE: Past experience showed need of opening of ports MININGPORT, 1335, 1337, 10332. All 4 might not need to be open thus this note instead of a firewall rules/port forwarding section, and being listed in todo.
+NOTE: Past experience showed need of opening ports MININGPORT, 1335, 1337, and 10332. Operators should open only the ports required for their deployment.
 
 
 
@@ -238,11 +241,3 @@ _Tested on Ubuntu 16 and 18_
 License:
 =========================
 [Available here](COPYING)
-
-
-TODO:
-=========================
-* link to whoever's defcoin repo is the main one now
-* alt frontends options investigation
-* firewall rules - were all 4 needed?
-* fix complaint about version being dirty when modifying p2pool/networks/defcoin.py to choose node type. After that is fixed, make sure it doesn't complain if you change the web frontend. Lastly make sure it wont complain by creating a run.sh script.
