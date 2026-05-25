@@ -60,6 +60,19 @@ share-version change. Operators sharing the same Defcoin P2Pool network should
 coordinate a restart/update window so their P2Pool nodes agree on version `36`.
 The parent-chain Defcoin blocks remain ordinary Defcoin blocks.
 
+For a normal gradual P2Pool upgrade, leave
+`DEFCOIN_P2POOL_DUSTFIX_FLAG_DAY` unset and let version `36` activate after the
+ordinary successor-vote threshold. On the current very small Defcoin P2Pool
+network, that can take too long, so coordinated operators can set:
+
+```bash
+DEFCOIN_P2POOL_DUSTFIX_FLAG_DAY=1
+```
+
+with the restart. This allows version `36` shares to follow version `35` shares
+immediately. Operators not using the flag-day build should not remain connected
+to the same P2Pool sharechain once version `36` shares are being mined.
+
 Suggested operator note:
 
 ```text
@@ -67,9 +80,11 @@ I am updating the Defcoin P2Pool fork to remove the old JP P2Pool developer
 donation script from newly mined templates. The on-chain address affected is
 DQ8AwqR2XJE9G5dSEfspJYH7Spre85dj6L. This is not a Defcoin hard fork; it is a
 P2Pool share-template/share-version update. Please pull the version that adds
-DonationDustFixedShare in p2pool/data.py, restart your pool during the same
-window, and keep your Defcoin parent-chain node in dual-magic compatibility mode
-until older wallets have mostly upgraded.
+DonationDustFixedShare in p2pool/data.py. Because the Defcoin P2Pool share rate
+is currently tiny, we should restart during the same window with
+DEFCOIN_P2POOL_DUSTFIX_FLAG_DAY=1 instead of waiting for normal share voting.
+Keep your Defcoin parent-chain node in dual-magic compatibility mode until older
+wallets have mostly upgraded.
 ```
 
 ## P2Pool peer handshake logging

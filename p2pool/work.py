@@ -301,17 +301,22 @@ class WorkerBridge(worker_interface.WorkerBridge):
                 share_type = previous_share_type
             else:
                 successor_type = previous_share_type.SUCCESSOR
-                
-                counts = p2pool_data.get_desired_version_counts(self.node.tracker,
-                    self.node.tracker.get_nth_parent_hash(previous_share.hash, self.node.net.CHAIN_LENGTH*9//10), self.node.net.CHAIN_LENGTH//10)
-                upgraded = counts.get(successor_type.VERSION, 0)/sum(counts.itervalues())
-                if upgraded > .65:
-                    print 'Switchover imminent. Upgraded: %.3f%% Threshold: %.3f%%' % (upgraded*100, 95)
-                # Share -> NewShare only valid if 95% of hashes in [net.CHAIN_LENGTH*9//10, net.CHAIN_LENGTH] for new version
-                if counts.get(successor_type.VERSION, 0) > sum(counts.itervalues())*95//100:
+
+                if (
+                        successor_type is p2pool_data.DonationDustFixedShare and
+                        p2pool_data.dustfix_flag_day_enabled(self.node.net)):
                     share_type = successor_type
                 else:
-                    share_type = previous_share_type
+                    counts = p2pool_data.get_desired_version_counts(self.node.tracker,
+                        self.node.tracker.get_nth_parent_hash(previous_share.hash, self.node.net.CHAIN_LENGTH*9//10), self.node.net.CHAIN_LENGTH//10)
+                    upgraded = counts.get(successor_type.VERSION, 0)/sum(counts.itervalues())
+                    if upgraded > .65:
+                        print 'Switchover imminent. Upgraded: %.3f%% Threshold: %.3f%%' % (upgraded*100, 95)
+                    # Share -> NewShare only valid if 95% of hashes in [net.CHAIN_LENGTH*9//10, net.CHAIN_LENGTH] for new version
+                    if counts.get(successor_type.VERSION, 0) > sum(counts.itervalues())*95//100:
+                        share_type = successor_type
+                    else:
+                        share_type = previous_share_type
         
         if desired_share_target is None:
             desired_share_target = 2**256-1

@@ -75,6 +75,11 @@ DUSTFIX_PADDING_SCRIPT = '\x6a\x40' + 'Defcoin P2Pool dustfix v36'.ljust(64, '\0
 def make_gentx_before_refhash(fixed_tail_script):
     return pack.VarStrType().pack(fixed_tail_script) + pack.IntType(64).pack(0) + pack.VarStrType().pack('\x6a\x28' + pack.IntType(256).pack(0) + pack.IntType(64).pack(0))[:3]
 
+def dustfix_flag_day_enabled(net):
+    return getattr(net, 'NAME', None) == 'defcoin' and os.environ.get(
+        'DEFCOIN_P2POOL_DUSTFIX_FLAG_DAY', '').lower() in (
+            '1', 'true', 'yes', 'on')
+
 def donation_script_to_address(net, script=DONATION_SCRIPT):
     try:
         return bitcoin_data.script2_to_address(
@@ -520,8 +525,13 @@ class BaseShare(object):
                 if type(self) is type(previous_share):
                     pass
                 elif type(self) is type(previous_share).SUCCESSOR:
-                    # switch only valid if 60% of hashes in [self.net.CHAIN_LENGTH*9//10, self.net.CHAIN_LENGTH] for new version
-                    if counts.get(self.VERSION, 0) < sum(counts.itervalues())*60//100:
+                    # Normal p2pool upgrades require votes. Defcoin's v36
+                    # donation-dust fix can also be activated by coordinated
+                    # operator flag day on the tiny Defcoin p2pool network.
+                    if not (
+                            type(self) is DonationDustFixedShare and
+                            dustfix_flag_day_enabled(self.net)
+                    ) and counts.get(self.VERSION, 0) < sum(counts.itervalues())*60//100:
                         raise p2p.PeerMisbehavingError('switch without enough hash power upgraded')
                 else:
                     raise p2p.PeerMisbehavingError('''%s can't follow %s''' % (type(self).__name__, type(previous_share).__name__))

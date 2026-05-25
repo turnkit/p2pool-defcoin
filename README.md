@@ -66,9 +66,15 @@ Defcoin P2Pool operators should update together. The relevant code is in:
   after share version 36 activation.
 
 If coordinating with another Defcoin P2Pool operator, ask them to pull this
-version and restart once both pools are ready. The parent-chain Defcoin blocks
-remain valid either way; incompatible old P2Pool share-template nodes simply
-should not continue sharing the same P2Pool sharechain after version 36 wins.
+version and restart once both pools are ready. For the small current Defcoin
+P2Pool network, operators can use a coordinated flag day instead of waiting for
+normal P2Pool upgrade voting:
+
+    DEFCOIN_P2POOL_DUSTFIX_FLAG_DAY=1 DEFCOIN_P2POOL_USE_NEW_MAGIC=1 python run_p2pool.py --net defcoin --allow-obsolete-bitcoind -a YOURADDR -n YOUR_PUBLIC_IP --bitcoind-p2p-port 10332
+
+The parent-chain Defcoin blocks remain valid either way; incompatible old
+P2Pool share-template nodes simply should not continue sharing the same P2Pool
+sharechain after version 36 wins.
 
 
 All
