@@ -12,6 +12,16 @@ from .Client import SOAPProxy, SOAPAddress
 from .Config import Config
 import urllib.request, urllib.parse, urllib.error
 
+
+def _open_http_wsdl(url, config=None):
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme not in ('http', 'https'):
+        raise IOError('Unsupported WSDL URL scheme: %s' % (parsed.scheme or '<none>'))
+    # Bandit B310: scheme is validated above before opening the URL.
+    if config is not None:
+        return urllib.request.URLopener(key_file=config.SSL.key_file, cert_file=config.SSL.cert_file).open(url)  # nosec B310
+    return urllib.request.urlopen(url)  # nosec B310
+
 class Proxy:
     """WSDL Proxy.
     
@@ -45,7 +55,7 @@ class Proxy:
             try:
                 self.wsdl = reader.loadFromStream(wsdlsource)
             except xml.parsers.expat.ExpatError as e:
-                newstream = urllib.request.URLopener(key_file=config.SSL.key_file, cert_file=config.SSL.cert_file).open(wsdlsource)
+                newstream = _open_http_wsdl(wsdlsource, config)
                 buf = newstream.readlines()
                 raise Error("Unable to parse WSDL file at %s: \n\t%s" % \
                       (wsdlsource, "\t".join(buf)))
@@ -65,18 +75,18 @@ class Proxy:
                 #print 'file'
             except (IOError, OSError): pass
             except xml.parsers.expat.ExpatError as e:
-                newstream = urllib.request.urlopen(wsdlsource)
+                newstream = _open_http_wsdl(wsdlsource)
                 buf = newstream.readlines()
                 raise Error("Unable to parse WSDL file at %s: \n\t%s" % \
                       (wsdlsource, "\t".join(buf)))
             
         if self.wsdl is None:
             try:
-                stream = urllib.request.URLopener(key_file=config.SSL.key_file, cert_file=config.SSL.cert_file).open(wsdlsource)
+                stream = _open_http_wsdl(wsdlsource, config)
                 self.wsdl = reader.loadFromStream(stream, wsdlsource)
             except (IOError, OSError): pass
             except xml.parsers.expat.ExpatError as e:
-                newstream = urllib.request.urlopen(wsdlsource)
+                newstream = _open_http_wsdl(wsdlsource)
                 buf = newstream.readlines()
                 raise Error("Unable to parse WSDL file at %s: \n\t%s" % \
                       (wsdlsource, "\t".join(buf)))

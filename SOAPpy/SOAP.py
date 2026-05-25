@@ -37,4 +37,4 @@ use
    SOAPProxy(...)
 
 instead.
-""", DeprecationWarning)
+""", DeprecationWarning, stacklevel=2)

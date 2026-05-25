@@ -36,6 +36,7 @@ except:
         return 'o%x' % x
 
 import xml.dom.minidom
+from defusedxml import minidom as safe_minidom
 from xml.dom import Node
 
 from . import logging
@@ -150,7 +151,7 @@ def urlopen(url, timeout=20, redirects=None):
     scheme, host, path, params, query, frag = urlparse(url)
 
     if not scheme in ('http', 'https'):
-        return urllib.request.urlopen(url)
+        raise ValueError('Unsupported URL scheme: %s' % (scheme or '<none>'))
     if params: path = '%s;%s' % (path, params)
     if query:  path = '%s?%s' % (path, query)
     if frag:   path = '%s#%s' % (path, frag)
@@ -612,8 +613,9 @@ class DOM:
         for child in node.childNodes:
             self._setOwnerDoc(document, child)
 
-    def nsUriMatch(self, value, wanted, strict=0, tt=type(())):
+    def nsUriMatch(self, value, wanted, strict=0, tt=None):
         """Return a true value if two namespace uri values match."""
+        tt = type(()) if tt is None else tt
         if value == wanted or (type(wanted) is tt) and value in wanted:
             return 1
         if not strict and value is not None:
@@ -632,7 +634,7 @@ class DOM:
     def loadDocument(self, data):
         """Load an xml file from a file-like object and return a DOM
            document instance."""
-        return xml.dom.minidom.parse(data)
+        return safe_minidom.parse(data)
 
     def loadFromURL(self, url):
         """Load an xml file from a URL and return a DOM document."""

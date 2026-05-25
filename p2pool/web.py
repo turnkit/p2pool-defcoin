@@ -46,7 +46,8 @@ def _atomic_write(filename, data):
         os.remove(filename)
         os.rename(filename + '.new', filename)
 
-def get_web_root(wb, datadir_path, bitcoind_getinfo_var, stop_event=variable.Event(), static_dir=None):
+def get_web_root(wb, datadir_path, bitcoind_getinfo_var, stop_event=None, static_dir=None):
+    stop_event = variable.Event() if stop_event is None else stop_event
     node = wb.node
     start_time = time.time()
     

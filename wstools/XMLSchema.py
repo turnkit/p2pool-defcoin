@@ -1196,7 +1196,7 @@ class XMLSchema(XMLSchemaComponent):
                             v._parent = weakref.ref(self)
                             getattr(self,collection)[k] = v
                         else:
-                            warnings.warn("Not keeping schema component.")
+                            warnings.warn("Not keeping schema component.", stacklevel=2)
       
             elif component == 'import':
                 slocd = SchemaReader.namespaceToSchema
@@ -1227,7 +1227,7 @@ class XMLSchema(XMLSchemaComponent):
                         class _LazyEvalImport(str):
                             '''Lazy evaluation of import, replace entry in self.imports.'''
                             #attributes = dict(namespace=import_ns)
-                            def getSchema(namespace):
+                            def getSchema(namespace, slocd=slocd):
                                 schema = slocd.get(namespace)
                                 if schema is None:
                                     parent = self._parent()
@@ -1249,7 +1249,7 @@ class XMLSchema(XMLSchemaComponent):
                 if import_ns in self.getImportSchemas():
                     warnings.warn(\
                         'Detected multiple imports of the namespace "%s" '\
-                        %import_ns)
+                        %import_ns, stacklevel=2)
             
                 self.addImportSchema(schema)
                 # spec says can have multiple imports of same namespace
@@ -1257,9 +1257,9 @@ class XMLSchema(XMLSchemaComponent):
                 self.imports[import_ns] = tp
                 
             elif component == 'redefine':
-                warnings.warn('redefine is ignored')
+                warnings.warn('redefine is ignored', stacklevel=2)
             elif component == 'annotation':
-                warnings.warn('annotation is ignored')
+                warnings.warn('annotation is ignored', stacklevel=2)
             elif component == 'attribute':
                 tp = AttributeDeclaration(self)
                 tp.fromDom(childNode)

@@ -97,13 +97,15 @@ class DataStream(object):
         self.dataviews = dataviews
     
     def add_datum(self, t, value=1):
-        for dv_name, dv in self.dataviews.items():
+        for dv in self.dataviews.values():
             dv._add_datum(t, value)
 
 
 class HistoryDatabase(object):
     @classmethod
-    def from_obj(cls, datastream_descriptions, obj={}):
+    def from_obj(cls, datastream_descriptions, obj=None):
+        obj = {} if obj is None else obj
+
         def convert_bin(bin):
             if isinstance(bin, dict):
                 return bin

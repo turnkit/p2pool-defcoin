@@ -232,7 +232,7 @@ class TrackerView(object):
         return self.get_delta_to_last(item) - self.get_delta_to_last(ancestor)
 
 class Tracker(object):
-    def __init__(self, items=[], delta_type=AttributeDelta):
+    def __init__(self, items=None, delta_type=AttributeDelta):
         self.items = {} # hash -> item
         self.reverse = {} # delta.tail -> set of item_hashes
         
@@ -249,7 +249,7 @@ class Tracker(object):
         self._delta_type = delta_type
         self._default_view = TrackerView(self, delta_type)
         
-        for item in items:
+        for item in [] if items is None else items:
             self.add(item)
     
     def __getattr__(self, name):

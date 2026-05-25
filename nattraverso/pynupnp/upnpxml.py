@@ -10,7 +10,7 @@ This module parse an UPnP device's XML definition in an Object.
 
 __revision__ = "$id"
 
-from xml.dom import minidom
+from defusedxml import minidom
 import logging
 
 # Allowed UPnP services to use when mapping ports/external addresses
@@ -86,4 +86,3 @@ class UPnPXml:
                 'URLBase')[0].firstChild.data.encode('utf-8')
         except:
             pass
-

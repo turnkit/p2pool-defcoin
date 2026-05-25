@@ -8,7 +8,8 @@ def resident():
     if platform.system() == 'Windows':
         from wmi import WMI
         w = WMI('.')
-        result = w.query("SELECT WorkingSet FROM Win32_PerfRawData_PerfProc_Process WHERE IDProcess=%d" % os.getpid())
+        # Bandit B608: pid is process-local integer data, not user input.
+        result = w.query("SELECT WorkingSet FROM Win32_PerfRawData_PerfProc_Process WHERE IDProcess=%d" % int(os.getpid()))  # nosec B608
         return int(result[0].WorkingSet)
     try:
         with open('/proc/%d/status' % os.getpid()) as f:

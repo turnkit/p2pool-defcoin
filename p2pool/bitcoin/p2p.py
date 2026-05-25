@@ -2,7 +2,7 @@
 Implementation of Bitcoin's p2p protocol
 '''
 
-import random
+import secrets
 import sys
 import time
 
@@ -31,7 +31,7 @@ class Protocol(p2protocol.Protocol):
                 address=self.transport.getHost().host,
                 port=self.transport.getHost().port,
             ),
-            nonce=random.randrange(2**64),
+            nonce=secrets.randbits(64),
             sub_version_num='/P2Pool:%s/' % (p2pool.__version__,),
             start_height=0,
         )

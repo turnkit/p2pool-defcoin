@@ -7,6 +7,7 @@ from .Utilities import *
 import string
 import fpconst
 import xml.sax
+from defusedxml import sax as defused_sax
 from wstools.XMLname import fromXMLname
 
 try: from M2Crypto import SSL
@@ -34,11 +35,11 @@ class RefHolder:
 
 class SOAPParser(xml.sax.handler.ContentHandler):
     class Frame:
-        def __init__(self, name, kind = None, attrs = {}, rules = {}):
+        def __init__(self, name, kind = None, attrs = None, rules = None):
             self.name = name
             self.kind = kind
-            self.attrs = attrs
-            self.rules = rules
+            self.attrs = {} if attrs is None else attrs
+            self.rules = {} if rules is None else rules
 
             self.contents = []
             self.names = []
@@ -1033,7 +1034,7 @@ def _parseSOAP(xml_str, rules = None):
     except ImportError:
         from io import StringIO
 
-    parser = xml.sax.make_parser()
+    parser = defused_sax.make_parser()
     t = SOAPParser(rules = rules)
     parser.setContentHandler(t)
     e = xml.sax.handler.ErrorHandler()

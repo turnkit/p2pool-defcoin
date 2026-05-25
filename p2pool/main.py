@@ -425,7 +425,7 @@ def main(args, net, datadir_path, merged_urls, worker_endpoint):
                         this_str += '\n Shares: %i (%i orphan, %i dead) Stale rate: %s Efficiency: %s Current payout: %s %s' % (
                             shares, stale_orphan_shares, stale_doa_shares,
                             math.format_binomial_conf(stale_orphan_shares + stale_doa_shares, shares, 0.95),
-                            math.format_binomial_conf(stale_orphan_shares + stale_doa_shares, shares, 0.95, lambda x: (1 - x)/(1 - stale_prop)),
+                            math.format_binomial_conf(stale_orphan_shares + stale_doa_shares, shares, 0.95, lambda x, stale_prop=stale_prop: (1 - x)/(1 - stale_prop)),
                             paystr, net.PARENT.SYMBOL,
                         )
                         this_str += '\n Pool: %sH/s Stale rate: %.1f%% Expected time to block: %s' % (

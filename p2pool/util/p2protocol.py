@@ -16,7 +16,8 @@ class TooLong(Exception):
     pass
 
 class Protocol(protocol.Protocol):
-    def __init__(self, message_prefix, max_payload_length, traffic_happened=variable.Event(), ignore_trailing_payload=False):
+    def __init__(self, message_prefix, max_payload_length, traffic_happened=None, ignore_trailing_payload=False):
+        traffic_happened = variable.Event() if traffic_happened is None else traffic_happened
         if isinstance(message_prefix, (tuple, list)):
             self._message_prefixes = tuple(ensure_bytes(prefix) for prefix in message_prefix)
             self._message_prefix = self._message_prefixes[0]

@@ -4,6 +4,7 @@ from collections import deque
 import base64
 import random
 import re
+import secrets
 import sys
 import time
 
@@ -350,7 +351,7 @@ class WorkerBridge(worker_interface.WorkerBridge):
                         self.current_work.value['height'],
                         ] + ([mm_data] if mm_data else []) + [ensure_bytes(x) for x in self.args.coinb_texts]
                     ) + ensure_bytes(self.current_work.value['coinbaseflags']))[:100],
-                    nonce=random.randrange(2**32),
+                    nonce=secrets.randbits(32),
                     address=address,
                     subsidy=self.current_work.value['subsidy'],
                     donation=(

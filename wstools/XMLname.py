@@ -44,7 +44,7 @@ def _toUnicodeHex(x):
 
 
 def _fromUnicodeHex(x):
-    return eval( r'u"\u'+x[2:-1]+'"' ) 
+    return chr(int(x[2:-1], 16))
 
 
 def toXMLname(string):

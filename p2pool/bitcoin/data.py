@@ -368,7 +368,7 @@ def check_merkle_link(tip_hash, link):
 
 def target_to_average_attempts(target):
     assert 0 <= target and isinstance(target, int), target
-    if target >= 2**256: warnings.warn('target >= 2**256!')
+    if target >= 2**256: warnings.warn('target >= 2**256!', stacklevel=2)
     return 2**256//(target + 1)
 
 def average_attempts_to_target(average_attempts):
@@ -377,7 +377,7 @@ def average_attempts_to_target(average_attempts):
 
 def target_to_difficulty(target):
     assert 0 <= target and isinstance(target, int), target
-    if target >= 2**256: warnings.warn('target >= 2**256!')
+    if target >= 2**256: warnings.warn('target >= 2**256!', stacklevel=2)
     return (0xffff0000 * 2**(256-64) + 1)/(target + 1)
 
 def difficulty_to_target(difficulty):

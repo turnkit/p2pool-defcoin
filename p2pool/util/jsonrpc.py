@@ -40,9 +40,9 @@ def Error_for_code(code):
 
 
 class Proxy(object):
-    def __init__(self, func, services=[]):
+    def __init__(self, func, services=None):
         self._func = func
-        self._services = services
+        self._services = [] if services is None else services
     
     def __getattr__(self, attr):
         if attr.startswith('rpc_'):

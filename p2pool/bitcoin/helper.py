@@ -49,7 +49,12 @@ def check(bitcoind, net, args):
 
 @deferral.retry('Error getting work from bitcoind:', 3)
 @defer.inlineCallbacks
-def getwork(bitcoind, use_getblocktemplate=False, txidcache={}, feecache={}, feefifo=[], known_txs={}):
+def getwork(bitcoind, use_getblocktemplate=False, txidcache=None, feecache=None, feefifo=None, known_txs=None):
+    txidcache = {} if txidcache is None else txidcache
+    feecache = {} if feecache is None else feecache
+    feefifo = [] if feefifo is None else feefifo
+    known_txs = {} if known_txs is None else known_txs
+
     def go():
         if use_getblocktemplate:
             # Defcoin Core Nu inherits modern getblocktemplate rule negotiation.

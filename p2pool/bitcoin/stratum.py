@@ -1,4 +1,4 @@
-import random
+import secrets
 import sys
 import time
 
@@ -85,7 +85,7 @@ class StratumRPCMiningProvider(object):
         else:
             self.fixed_target = False
             self.target = x['share_target'] if self.target == None else max(x['min_share_target'], self.target)
-        jobid = str(random.randrange(2**128))
+        jobid = str(secrets.randbits(128))
         self.other.svc_mining.rpc_set_difficulty(bitcoin_data.target_to_difficulty(self.target)*self.wb.net.DUMB_SCRYPT_DIFF).addErrback(lambda err: None)
         self.other.svc_mining.rpc_notify(
             jobid, # jobid

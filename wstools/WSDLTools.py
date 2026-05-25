@@ -1417,7 +1417,8 @@ def GetWSAActionOutput(operation):
         return '%s%s/%s' %(targetNamespace, ptName, msgName)
     return '%s/%s/%s' %(targetNamespace, ptName, msgName)
 
-def FindExtensions(object, kind, t_type=type(())):
+def FindExtensions(object, kind, t_type=None):
+    t_type = type(()) if t_type is None else t_type
     if isinstance(kind, t_type):
         result = []
         namespaceURI, name = kind
@@ -1427,7 +1428,8 @@ def FindExtensions(object, kind, t_type=type(())):
                 and item.name == name ]
     return [ item for item in object.extensions if isinstance(item, kind) ]
 
-def FindExtension(object, kind, t_type=type(())):
+def FindExtension(object, kind, t_type=None):
+    t_type = type(()) if t_type is None else t_type
     if isinstance(kind, t_type):
         namespaceURI, name = kind
         for item in object.extensions:

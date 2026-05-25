@@ -1,26 +1,17 @@
 import os
 import re
-import sys
 import traceback
 import subprocess
-
-def check_output(*popenargs, **kwargs):
-    process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
-    output, unused_err = process.communicate()
-    retcode = process.poll()
-    if retcode:
-        raise ValueError((retcode, output))
-    return output
 
 def _get_version():
     try:
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         try:
-            return check_output(['git', 'describe', '--always', '--dirty'], cwd=root_dir).strip().decode('ascii')
+            return subprocess.check_output(['git', 'describe', '--always', '--dirty'], cwd=root_dir).strip().decode('ascii')  # noqa: S603
         except:
             pass
         try:
-            return check_output(['git.cmd', 'describe', '--always', '--dirty'], cwd=root_dir).strip().decode('ascii')
+            return subprocess.check_output(['git.cmd', 'describe', '--always', '--dirty'], cwd=root_dir).strip().decode('ascii')  # noqa: S603
         except:
             pass
         

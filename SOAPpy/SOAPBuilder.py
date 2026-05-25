@@ -70,7 +70,7 @@ class SOAPBuilder:
         NS.XSD: NS.XSD_T, NS.XSD2: NS.XSD2_T, NS.XSD3: NS.XSD3_T,
         NS.XSI: NS.XSI_T, NS.XSI2: NS.XSI2_T, NS.XSI3: NS.XSI3_T}
 
-    def __init__(self, args = (), kw = {}, method = None, namespace = None,
+    def __init__(self, args = (), kw = None, method = None, namespace = None,
         header = None, methodattrs = None, envelope = 1, encoding = 'UTF-8',
         use_refs = 0, config = Config, noroot = 0):
 
@@ -79,7 +79,7 @@ class SOAPBuilder:
             ''.encode(encoding)
 
         self.args       = args
-        self.kw         = kw
+        self.kw         = {} if kw is None else kw
         self.envelope   = envelope
         self.encoding   = encoding
         self.method     = method
@@ -275,8 +275,9 @@ class SOAPBuilder:
 
     # dumpers
 
-    def dump(self, obj, tag = None, typed = 1, ns_map = {}):
+    def dump(self, obj, tag = None, typed = 1, ns_map = None):
         if Config.debug: print("In dump.", "obj=", obj)
+        ns_map = {} if ns_map is None else ns_map
         ns_map = ns_map.copy()
         self.depth += 1
 
@@ -287,10 +288,11 @@ class SOAPBuilder:
         self.depth -= 1
 
     # generic dumper
-    def dumper(self, nsURI, obj_type, obj, tag, typed = 1, ns_map = {},
+    def dumper(self, nsURI, obj_type, obj, tag, typed = 1, ns_map = None,
                rootattr = '', id = '',
                xml = '<%(tag)s%(type)s%(id)s%(attrs)s%(root)s>%(data)s</%(tag)s>\n'):
         if Config.debug: print("In dumper.")
+        ns_map = {} if ns_map is None else ns_map
 
         if nsURI == None:
             nsURI = self.config.typesNamespaceURI
@@ -320,8 +322,9 @@ class SOAPBuilder:
         return xml % {"tag": tag, "type": t, "data": data, "root": rootattr,
             "id": id, "attrs": a}
 
-    def dump_float(self, obj, tag, typed = 1, ns_map = {}):
+    def dump_float(self, obj, tag, typed = 1, ns_map = None):
         if Config.debug: print("In dump_float.")
+        ns_map = {} if ns_map is None else ns_map
         tag = tag or self.gentag()
 
         tag = toXMLname(tag) # convert from SOAP 1.2 XML name encoding
@@ -342,18 +345,21 @@ class SOAPBuilder:
         self.out.append(self.dumper(
             None, "double", obj, tag, typed, ns_map, self.genroot(ns_map)))
 
-    def dump_int(self, obj, tag, typed = 1, ns_map = {}):
+    def dump_int(self, obj, tag, typed = 1, ns_map = None):
         if Config.debug: print("In dump_int.")
+        ns_map = {} if ns_map is None else ns_map
         self.out.append(self.dumper(None, 'integer', obj, tag, typed,
                                      ns_map, self.genroot(ns_map)))
 
-    def dump_bool(self, obj, tag, typed = 1, ns_map = {}):
+    def dump_bool(self, obj, tag, typed = 1, ns_map = None):
         if Config.debug: print("In dump_bool.")
+        ns_map = {} if ns_map is None else ns_map
         self.out.append(self.dumper(None, 'boolean', obj, tag, typed,
                                      ns_map, self.genroot(ns_map)))
         
-    def dump_string(self, obj, tag, typed = 0, ns_map = {}):
+    def dump_string(self, obj, tag, typed = 0, ns_map = None):
         if Config.debug: print("In dump_string.")
+        ns_map = {} if ns_map is None else ns_map
         tag = tag or self.gentag()
         tag = toXMLname(tag) # convert from SOAP 1.2 XML name encoding
 
@@ -370,8 +376,9 @@ class SOAPBuilder:
     dump_str = dump_string # For Python 2.2+
     dump_unicode = dump_string
 
-    def dump_None(self, obj, tag, typed = 0, ns_map = {}):
+    def dump_None(self, obj, tag, typed = 0, ns_map = None):
         if Config.debug: print("In dump_None.")
+        ns_map = {} if ns_map is None else ns_map
         tag = tag or self.gentag()
         tag = toXMLname(tag) # convert from SOAP 1.2 XML name encoding
         ns = self.genns(ns_map, self.config.schemaNamespaceURI)[0]
@@ -381,8 +388,9 @@ class SOAPBuilder:
 
     dump_NoneType = dump_None # For Python 2.2+
 
-    def dump_list(self, obj, tag, typed = 1, ns_map = {}):
+    def dump_list(self, obj, tag, typed = 1, ns_map = None):
         if Config.debug: print("In dump_list.",  "obj=", obj)
+        ns_map = {} if ns_map is None else ns_map
         tag = tag or self.gentag()
         tag = toXMLname(tag) # convert from SOAP 1.2 XML name encoding
 
@@ -501,7 +509,8 @@ class SOAPBuilder:
 
     dump_tuple = dump_list
 
-    def dump_exception(self, obj, tag, typed = 0, ns_map = {}):
+    def dump_exception(self, obj, tag, typed = 0, ns_map = None):
+        ns_map = {} if ns_map is None else ns_map
         if isinstance(obj, faultType):    # Fault
             cns, cdecl = self.genns(ns_map, NS.ENC)
             vns, vdecl = self.genns(ns_map, NS.ENV)
@@ -512,8 +521,9 @@ class SOAPBuilder:
                 self.dump(obj.detail, "detail", typed, ns_map)
             self.out.append("</%sFault>\n" % vns)
 
-    def dump_dictionary(self, obj, tag, typed = 1, ns_map = {}):
+    def dump_dictionary(self, obj, tag, typed = 1, ns_map = None):
         if Config.debug: print("In dump_dictionary.")
+        ns_map = {} if ns_map is None else ns_map
         tag = tag or self.gentag()
         tag = toXMLname(tag) # convert from SOAP 1.2 XML name encoding
 
@@ -535,7 +545,8 @@ class SOAPBuilder:
 
     dump_dict = dump_dictionary # For Python 2.2+
 
-    def dump_dispatch(self, obj, tag, typed = 1, ns_map = {}):
+    def dump_dispatch(self, obj, tag, typed = 1, ns_map = None):
+        ns_map = {} if ns_map is None else ns_map
         if not tag:
             # If it has a name use it.
             if isinstance(obj, anyType) and obj._name:
@@ -638,7 +649,7 @@ class SOAPBuilder:
 # SOAPBuilder's more public interface
 ################################################################################
 
-def buildSOAP(args=(), kw={}, method=None, namespace=None,
+def buildSOAP(args=(), kw=None, method=None, namespace=None,
               header=None, methodattrs=None, envelope=1, encoding='UTF-8',
               config=Config, noroot = 0):
     t = SOAPBuilder(args=args, kw=kw, method=method, namespace=namespace,

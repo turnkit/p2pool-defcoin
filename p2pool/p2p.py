@@ -2,6 +2,7 @@
 
 import math
 import random
+import secrets
 import sys
 import time
 
@@ -395,7 +396,8 @@ class Protocol(p2protocol.Protocol):
         if p2pool.BENCH: print("%8.3f ms for %i shares in handle_shares (%3.3f ms/share)" % ((t1-t0)*1000., len(shares), (t1-t0)*1000./ max(1, len(shares))))
 
     
-    def sendShares(self, shares, tracker, known_txs, include_txs_with=[]):
+    def sendShares(self, shares, tracker, known_txs, include_txs_with=None):
+        include_txs_with = [] if include_txs_with is None else include_txs_with
         t0 = time.time()
         tx_hashes = set()
         hashes_to_send = []
@@ -734,10 +736,15 @@ class SingleClientFactory(protocol.ReconnectingClientFactory):
         self.node.lost_conn(proto, reason)
 
 class Node(object):
-    def __init__(self, best_share_hash_func, port, net, addr_store={}, connect_addrs=set(), desired_outgoing_conns=10, max_outgoing_attempts=30, max_incoming_conns=50, preferred_storage=1000, known_txs_var=variable.VariableDict({}), mining_txs_var=variable.VariableDict({}), mining2_txs_var=variable.VariableDict({}), advertise_ip=True, external_ip=None):
+    def __init__(self, best_share_hash_func, port, net, addr_store=None, connect_addrs=None, desired_outgoing_conns=10, max_outgoing_attempts=30, max_incoming_conns=50, preferred_storage=1000, known_txs_var=None, mining_txs_var=None, mining2_txs_var=None, advertise_ip=True, external_ip=None):
         self.best_share_hash_func = best_share_hash_func
         self.port = port
         self.net = net
+        addr_store = {} if addr_store is None else addr_store
+        connect_addrs = set() if connect_addrs is None else connect_addrs
+        known_txs_var = variable.VariableDict({}) if known_txs_var is None else known_txs_var
+        mining_txs_var = variable.VariableDict({}) if mining_txs_var is None else mining_txs_var
+        mining2_txs_var = variable.VariableDict({}) if mining2_txs_var is None else mining2_txs_var
         self.addr_store = dict(addr_store)
         self.connect_addrs = connect_addrs
         self.preferred_storage = preferred_storage
@@ -748,7 +755,7 @@ class Node(object):
         self.external_ip = external_ip
         
         self.traffic_happened = variable.Event()
-        self.nonce = random.randrange(2**64)
+        self.nonce = secrets.randbits(64)
         self.peers = {}
         self.bans = {} # address -> end_time
         self.banscores = {} # address -> how naughty this peer has been recently

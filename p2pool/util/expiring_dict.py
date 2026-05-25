@@ -34,11 +34,11 @@ class Node(object):
 
 
 class LinkedList(object):
-    def __init__(self, iterable=[]):
+    def __init__(self, iterable=None):
         self.start, self.end = Node(None), Node(None)
         Node.connect(self.start, self.end)
         
-        for item in iterable:
+        for item in [] if iterable is None else iterable:
             self.append(item)
     
     def __repr__(self):

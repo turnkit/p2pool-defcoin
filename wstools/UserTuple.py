@@ -46,6 +46,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # $Id$
 
+
+def _cmp(left, right):
+    return (left > right) - (left < right)
+
 #XXX tuple instances (in Python 2.2) contain also:
 #   __class__, __delattr__, __getattribute__, __hash__, __new__,
 #   __reduce__, __setattr__, __str__
@@ -78,7 +82,7 @@ class UserTuple:
         if isinstance(other, UserTuple): return other.data
         else: return other
     def __cmp__(self, other):
-        return cmp(self.data, self.__cast(other))
+        return _cmp(self.data, self.__cast(other))
     def __contains__(self, item): return item in self.data
     def __len__(self): return len(self.data)
     def __getitem__(self, i): return self.data[i]
@@ -96,4 +100,3 @@ class UserTuple:
     def __mul__(self, n):
         return self.__class__(self.data*n)
     __rmul__ = __mul__
-

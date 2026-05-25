@@ -1120,13 +1120,13 @@ class ShareStore(object):
         return [os.path.join(self.dirname, self.filename + str(suffix)) for suffix in suffixes], os.path.join(self.dirname, self.filename + (str(suffixes[-1] + 1) if suffixes else str(0)))
     
     def forget_share(self, share_hash):
-        for filename, (share_hashes, verified_hashes) in self.known_desired.items():
+        for share_hashes, verified_hashes in self.known_desired.values():
             if share_hash in share_hashes:
                 share_hashes.remove(share_hash)
         self.check_remove()
     
     def forget_verified_share(self, share_hash):
-        for filename, (share_hashes, verified_hashes) in self.known_desired.items():
+        for share_hashes, verified_hashes in self.known_desired.values():
             if share_hash in verified_hashes:
                 verified_hashes.remove(share_hash)
         self.check_remove()

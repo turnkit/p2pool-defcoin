@@ -296,9 +296,10 @@ class _implementation:
         W('"')
 
 
-    def _do_element(self, node, initial_other_attrs = [], unused = None):
+    def _do_element(self, node, initial_other_attrs = None, unused = None):
         '''_do_element(self, node, initial_other_attrs = [], unused = {}) -> None
         Process an element (and its children).'''
+        initial_other_attrs = [] if initial_other_attrs is None else initial_other_attrs
 
         # Get state (from the stack) make local copies.
         #   ns_parent -- NS declarations in parent

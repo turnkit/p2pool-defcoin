@@ -1318,7 +1318,8 @@ class compoundType(anyType):
                 self._keyord.append(name)
               
 
-    def _getItemAsList(self, name, default = []):
+    def _getItemAsList(self, name, default = None):
+        default = [] if default is None else default
         try:
             d = self.__dict__[name]
         except:
@@ -1736,5 +1737,4 @@ def simplify_contents(object, level=0):
             object[k] = simplify(object[k])
     
     return object
-
 

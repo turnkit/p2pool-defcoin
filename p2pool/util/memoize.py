@@ -18,7 +18,9 @@ class LRUDict(object):
 
 _nothing = object()
 
-def memoize_with_backing(backing, has_inverses=set()):
+def memoize_with_backing(backing, has_inverses=None):
+    has_inverses = set() if has_inverses is None else has_inverses
+
     def a(f):
         def b(*args):
             res = backing.get((f, args), _nothing)

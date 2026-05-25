@@ -253,8 +253,8 @@ def inlineCallbacks(f):
                             continue
                         else:
                             currently_waiting_on[:] = [res]
-                            def gotResult(res2):
-                                assert currently_waiting_on[0] is res
+                            def gotResult(res2, expected=res):
+                                assert currently_waiting_on[0] is expected
                                 currently_waiting_on[:] = []
                                 if stop_running[0]:
                                     return
