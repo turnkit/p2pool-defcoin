@@ -1,5 +1,4 @@
-Twisted>=12.2.0
-argparse>=1.2.1
-pyOpenSSL>=0.13
-defusedxml>=0.7.1
-service-identity>=24.1.0
+Twisted>=26.4.0,<27
+pyOpenSSL>=26.2.0,<27
+defusedxml>=0.7.1,<1
+service-identity>=24.2.0,<25
