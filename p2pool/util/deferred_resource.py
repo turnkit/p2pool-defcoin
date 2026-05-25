@@ -4,13 +4,15 @@ from twisted.internet import defer
 from twisted.web import resource, server
 from twisted.python import log
 
+from p2pool.util.py3 import ensure_bytes
+
 class DeferredResource(resource.Resource):
     def render(self, request):
         def finish(x):
             if request.channel is None: # disconnected
                 return
             if x is not None:
-                request.write(x)
+                request.write(ensure_bytes(x, 'utf-8'))
             request.finish()
         
         def finish_error(fail):
