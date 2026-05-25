@@ -40,6 +40,9 @@ ruff check --select E9,F63,F7,F82 backend/p2pool backend/run_p2pool.py run_p2poo
 cd backend && python -m twisted.trial p2pool.test.test_data p2pool.test.test_node p2pool.test.bitcoin.test_data
 python backend/dev/cache_benchmark.py
 pip-audit -r backend/requirements.txt
+pip-audit -r backend/conf/requirements-testing.txt
+pip-audit -r backend/conf/requirements-development.txt
+bandit --severity-level medium -r backend/p2pool backend/run_p2pool.py run_p2pool.py -x backend/p2pool/test
 ```
 
 See `../docs/TECHNICAL_GUIDE.md` for the fuller test, audit, and deployment notes.

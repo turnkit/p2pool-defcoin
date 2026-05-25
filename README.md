@@ -70,9 +70,12 @@ python run_p2pool.py \
   -n YOUR_PUBLIC_IP \
   --bitcoind-address 127.0.0.1 \
   --bitcoind-p2p-port 10332 \
-  --fee 1.5 \
-  --disable-upnp
+  --fee 1.5
 ```
+
+UPnP is disabled by default in this Defcoin fork. Use `--enable-upnp` only for
+consumer NAT deployments where automatic router port mapping is explicitly
+desired.
 
 Point miners at the configured Stratum worker port, commonly:
 

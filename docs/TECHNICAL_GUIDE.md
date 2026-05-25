@@ -188,14 +188,23 @@ python run_p2pool.py \
   -n YOUR_PUBLIC_IP \
   --bitcoind-address 127.0.0.1 \
   --bitcoind-p2p-port 10332 \
-  --fee 1.5 \
-  --disable-upnp
+  --fee 1.5
 ```
 
 `-a` sets the operator/default payout address. `--fee` sets the public worker
 fee, applied by occasionally assigning worker shares to the operator address
 instead of the miner-submitted username address. This fee is separate from the
 legacy P2Pool developer donation script fixed by share version `36`.
+
+UPnP is disabled by default in this Defcoin fork. Use `--enable-upnp` only for
+consumer NAT deployments where automatic router port mapping is intentionally
+wanted. Hosted pool servers should keep UPnP disabled and manage exposed ports
+explicitly with the host firewall and reverse proxy.
+
+Historical upstream crash reports are disabled by default. Operators who
+explicitly want to send caught exception traces to the old upstream p2pool
+error endpoint can opt in with `--enable-bugreport`. Public pool deployments
+should normally leave this disabled so operational details stay on the host.
 
 The fee can be checked from the API:
 
@@ -313,9 +322,15 @@ consensus and share validation code should favor stable, tested dependencies
 over unnecessary churn.
 
 Vendored compatibility packages such as `SOAPpy` and `wstools` are legacy code
-kept for compatibility. Linting is therefore focused on fatal Python errors,
-porting risks, security-sensitive patterns, and changed code rather than
-blindly restyling old vendored modules.
+kept for compatibility with optional NAT traversal and historical P2Pool code.
+UPnP is opt-in, XML parsing paths use `defusedxml`, and remote WSDL loading is
+scheme-restricted. Linting is therefore focused on fatal Python errors, porting
+risks, security-sensitive patterns, and changed code rather than blindly
+restyling old vendored modules.
+
+The repository includes a GitHub Actions CI workflow that runs the compile
+check, fatal-error Ruff gate, selected Twisted tests, `pip-audit`, Bandit
+medium/high checks, and a Retire.js audit for bundled static frontend assets.
 
 ## Tests and quality gates
 
@@ -334,6 +349,31 @@ Use live deployment testing carefully. The Defcoin P2Pool network can be very
 small, so a pool operator should confirm that Stratum miners reconnect, shares
 are accepted, the web API responds, and the parent-chain node stays synced
 after changes.
+
+## Operational hardening checklist
+
+A public Defcoin P2Pool server should use explicit operating-system boundaries
+instead of relying on the Python process to protect itself:
+
+- Run P2Pool under an unprivileged service account.
+- Keep Defcoin RPC bound to loopback only.
+- Expose only required public ports: web, Defcoin parent-chain P2P, P2Pool peer
+  P2P, and Stratum.
+- Use a default-drop firewall policy.
+- Put public HTTP endpoints behind nginx or another reverse proxy with security
+  headers, CSP, request limits for API paths, and ordinary TLS renewal.
+- Run P2Pool with UPnP disabled on hosted servers.
+- Disable upstream bug reporting unless the operator intentionally opts in.
+- Cap journal and application log growth so bad peers cannot fill the disk.
+- Monitor service state, web/API health, open ports, disk pressure, memory
+  pressure, certificate expiry, and Defcoin RPC block count.
+- Keep local backups and restoration notes. Restore tests are valuable, but
+  should be done deliberately with the operator present because this stack is a
+  live mining service.
+
+The dc903 deployment uses a small systemd timer named
+`defcoin-ops-health-check.timer` for non-invasive checks. It writes compact
+status lines to journald and does not restart services automatically.
 
 ## P2Pool peer handshake logging
 

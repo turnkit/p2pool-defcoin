@@ -515,9 +515,12 @@ def run():
     parser.add_argument('--irc-announce',
         help='announce any blocks found on irc://irc.freenode.net/#p2pool',
         action='store_true', default=False, dest='irc_announce')
+    parser.add_argument('--enable-bugreport',
+        help='opt in to submitting caught exceptions to the historical upstream p2pool error endpoint',
+        action='store_true', default=False, dest='bugreport')
     parser.add_argument('--no-bugreport',
-        help='disable submitting caught exceptions to the author',
-        action='store_true', default=False, dest='no_bugreport')
+        help=fixargparse.argparse.SUPPRESS,
+        action='store_false', dest='bugreport')
     
     p2pool_group = parser.add_argument_group('p2pool interface')
     p2pool_group.add_argument('--p2pool-port', metavar='PORT',
@@ -526,9 +529,12 @@ def run():
     p2pool_group.add_argument('-n', '--p2pool-node', metavar='ADDR[:PORT]',
         help='connect to existing p2pool node at ADDR listening on port PORT (defaults to default p2pool P2P port) in addition to builtin addresses',
         type=str, action='append', default=[], dest='p2pool_nodes')
+    parser.add_argument('--enable-upnp',
+        help='''attempt to use UPnP to forward p2pool's P2P port from the Internet to this computer''',
+        action='store_true', default=False, dest='upnp')
     parser.add_argument('--disable-upnp',
-        help='''don't attempt to use UPnP to forward p2pool's P2P port from the Internet to this computer''',
-        action='store_false', default=True, dest='upnp')
+        help='''compatibility option; UPnP is disabled by default in this Defcoin fork''',
+        action='store_false', dest='upnp')
     p2pool_group.add_argument('--max-conns', metavar='CONNS',
         help='maximum incoming connections (default: 40)',
         type=int, action='store', default=40, dest='p2pool_conns')
@@ -709,7 +715,7 @@ def run():
                 postdata=p2pool.__version__ + ' ' + net.NAME + '\n' + text,
                 timeout=15,
             ).addBoth(lambda x: None)
-    if not args.no_bugreport:
+    if args.bugreport:
         log.addObserver(ErrorReporter().emit)
     if args.rconsole:
         from rfoo.utils import rconsole
