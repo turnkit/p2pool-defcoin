@@ -1,5 +1,5 @@
 import unittest
-import mock
+from unittest import mock
 from random import randint
 from binascii import hexlify, unhexlify
 

@@ -7,6 +7,7 @@ var draw = function (hashrate, doarate, blocks, renderTo, interval) {
     },
     credits: { enabled: false },
     exporting: { enabled: false },
+    accessibility: { enabled: false },
     title: { text: 'Hashrate/Reject Rate (' + interval + ')' },
     xAxis: {
       type: 'datetime',
@@ -118,4 +119,3 @@ var draw = function (hashrate, doarate, blocks, renderTo, interval) {
     });
   }
 };
-

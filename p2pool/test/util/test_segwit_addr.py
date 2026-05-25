@@ -20,7 +20,7 @@
 # THE SOFTWARE.
 
 import unittest
-import mock
+from unittest import mock
 
 from p2pool.util import segwit_addr
 

@@ -1,4 +1,4 @@
 ipdb>=0.13.13,<1
-ipython>=8.18,<10
-ruff>=0.8,<1
-pip-audit>=2.9,<3
+ipython>=9.13,<10
+ruff>=0.15.14,<1
+pip-audit>=2.10,<3

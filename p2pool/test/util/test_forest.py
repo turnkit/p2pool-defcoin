@@ -77,7 +77,7 @@ class FakeShare(object):
             setattr(self, k, v)
         self._attrs = kwargs
 
-def test_tracker(self):
+def check_tracker(self):
     t = DumbTracker(iter(self.items.values()))
     
     assert self.items == t.items, (self.items, t.items)
@@ -101,7 +101,7 @@ def test_tracker(self):
 
 def generate_tracker_simple(n):
     t = forest.Tracker(math.shuffled(FakeShare(hash=i, previous_hash=i - 1 if i > 0 else None) for i in range(n)))
-    test_tracker(t)
+    check_tracker(t)
     return t
 
 def generate_tracker_random(n):
@@ -110,7 +110,7 @@ def generate_tracker_random(n):
         x = random.choice(items + [FakeShare(hash=None), FakeShare(hash=random.randrange(1000000, 2000000))]).hash
         items.append(FakeShare(hash=i, previous_hash=x))
     t = forest.Tracker(math.shuffled(items))
-    test_tracker(t)
+    check_tracker(t)
     return t
 
 class Test(unittest.TestCase):
@@ -144,7 +144,7 @@ class Test(unittest.TestCase):
                         pass # print "aborted", x
                     else:
                         break
-                test_tracker(t)
+                check_tracker(t)
     
     def test_tracker3(self):
         for ii in range(10):
@@ -154,11 +154,11 @@ class Test(unittest.TestCase):
                 items.append(FakeShare(hash=i, previous_hash=x))
             
             t = forest.Tracker()
-            test_tracker(t)
+            check_tracker(t)
             
             for item in math.shuffled(items):
                 t.add(item)
-                test_tracker(t)
+                check_tracker(t)
                 if random.randrange(3) == 0:
                     while True:
                         try:
@@ -167,12 +167,12 @@ class Test(unittest.TestCase):
                             pass
                         else:
                             break
-                    test_tracker(t)
+                    check_tracker(t)
             
             for item in math.shuffled(items):
                 if item.hash not in t.items:
                     t.add(item)
-                    test_tracker(t)
+                    check_tracker(t)
                 if random.randrange(3) == 0:
                     while True:
                         try:
@@ -181,7 +181,7 @@ class Test(unittest.TestCase):
                             pass
                         else:
                             break
-                    test_tracker(t)
+                    check_tracker(t)
             
             while t.items:
                 while True:
@@ -191,4 +191,4 @@ class Test(unittest.TestCase):
                         pass
                     else:
                         break
-                test_tracker(t)
+                check_tracker(t)
