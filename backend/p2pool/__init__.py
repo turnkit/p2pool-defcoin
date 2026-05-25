@@ -1,7 +1,7 @@
 import os
 import re
 import shutil
-import subprocess
+import subprocess  # nosec B404
 
 
 def _describe_from_git(root_dir):
@@ -10,7 +10,7 @@ def _describe_from_git(root_dir):
         if command is None:
             continue
         try:
-            return subprocess.check_output(  # noqa: S603
+            return subprocess.check_output(  # noqa: S603  # nosec B603
                 [command, 'describe', '--always', '--dirty'],
                 cwd=root_dir,
                 stderr=subprocess.DEVNULL,
@@ -50,7 +50,9 @@ def _read_git_head(git_dir):
 
 
 def _get_version():
-    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    package_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    repo_root = os.path.dirname(package_root)
+    root_dir = repo_root if os.path.exists(os.path.join(repo_root, '.git')) else package_root
     try:
         git_version = _describe_from_git(root_dir)
         if git_version is not None:

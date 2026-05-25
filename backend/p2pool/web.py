@@ -6,6 +6,7 @@ import os
 import sys
 import time
 import traceback
+from contextlib import suppress
 
 from twisted.internet import defer, reactor
 from twisted.python import log
@@ -36,10 +37,8 @@ def _atomic_write(filename, data):
     with open(filename + '.new', 'wb') as f:
         f.write(ensure_bytes(data))
         f.flush()
-        try:
+        with suppress(OSError):
             os.fsync(f.fileno())
-        except:
-            pass
     try:
         os.rename(filename + '.new', filename)
     except: # XXX windows can't overwrite
@@ -492,7 +491,20 @@ def get_web_root(wb, datadir_path, bitcoind_getinfo_var, stop_event=None, static
     new_root.putChild(b'graph_data', WebInterface(lambda source, view: hd.datastreams[source].dataviews[view].get_data(time.time())))
     
     if static_dir is None:
-        static_dir = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'web-static')
+        launcher_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        static_dir_candidates = (
+            os.path.join(launcher_dir, 'frontend', 'web-static'),
+            os.path.join(launcher_dir, 'web-static'),
+            os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'web-static')),
+        )
+        for candidate in static_dir_candidates:
+            if os.path.isdir(candidate):
+                static_dir = candidate
+                break
+        else:
+            raise RuntimeError(
+                'No web-static frontend directory found. Checked: '
+                f'{", ".join(static_dir_candidates)}')
     web_root.putChild(b'static', static.File(static_dir))
     
     return web_root

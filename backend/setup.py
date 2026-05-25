@@ -6,10 +6,19 @@ import platform
 
 from distutils.core import setup
 from distutils.sysconfig import get_python_lib
-import py2exe
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+os.chdir(BASE_DIR)
+try:
+    import py2exe
+except ImportError:
+    py2exe = None
 
 version = __import__('p2pool').__version__
 im64 = '64' in platform.architecture()[0]
+
+if py2exe is None:
+    raise SystemExit('py2exe packaging is a legacy Windows path and is not installed in this Python environment.')
 
 extra_includes = []
 import p2pool.networks
@@ -30,7 +39,7 @@ try:
     sys.argv[1:] = ['py2exe']
     setup(name='p2pool',
         version=version,
-        description='Peer-to-peer Bitcoin mining pool',
+        description='Peer-to-peer Defcoin mining pool',
         author='Forrest Voight',
         author_email='forrest@forre.st',
         url='http://p2pool.forre.st/',
@@ -38,11 +47,8 @@ try:
             ('', ['README.md']),
             ("Microsoft.VC90.MFC", mfcfiles),
             ('web-static', [
-                'web-static/d3.v2.min.js',
-                'web-static/favicon.ico',
-                'web-static/graphs.html',
-                'web-static/index.html',
-                'web-static/share.html',
+                '../frontend/web-static/favicon.ico',
+                '../frontend/web-static/index.html',
             ]),
         ],
 

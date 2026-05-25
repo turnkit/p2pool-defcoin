@@ -9,7 +9,7 @@ import p2pool
 from p2pool.util import math, pack, segwit_addr, cash_addr
 from p2pool.util.py3 import bchr, bord, bytes_to_hex, hex_to_bytes, ensure_bytes
 import struct
-from functools import reduce
+from functools import lru_cache, reduce
 
 mask = (1<<64) - 1
 
@@ -366,20 +366,24 @@ def check_merkle_link(tip_hash, link):
 
 # targets
 
+@lru_cache(maxsize=4096)
 def target_to_average_attempts(target):
     assert 0 <= target and isinstance(target, int), target
     if target >= 2**256: warnings.warn('target >= 2**256!', stacklevel=2)
     return 2**256//(target + 1)
 
+@lru_cache(maxsize=4096)
 def average_attempts_to_target(average_attempts):
     assert average_attempts > 0
     return min(int(2**256/average_attempts - 1 + 0.5), 2**256-1)
 
+@lru_cache(maxsize=4096)
 def target_to_difficulty(target):
     assert 0 <= target and isinstance(target, int), target
     if target >= 2**256: warnings.warn('target >= 2**256!', stacklevel=2)
     return (0xffff0000 * 2**(256-64) + 1)/(target + 1)
 
+@lru_cache(maxsize=4096)
 def difficulty_to_target(difficulty):
     assert difficulty >= 0
     if difficulty == 0: return 2**256-1
@@ -402,6 +406,7 @@ human_address_type = ChecksummedType(pack.ComposedType([
     ('pubkey_hash', pack.IntType(160)),
 ]))
 
+@lru_cache(maxsize=4096)
 def pubkey_hash_to_address(pubkey_hash, addr_ver, bech32_ver, net):
     if addr_ver == -1:
         if hasattr(net, 'padding_bugfix') and net.padding_bugfix:
@@ -425,10 +430,12 @@ def pubkey_to_address(pubkey, net):
 class AddrError(Exception):
     __slots__ = ()
 
+@lru_cache(maxsize=4096)
 def address_to_script2(address, net):
     res = address_to_pubkey_hash(address, net)
     return pubkey_hash_to_script2(res[0], res[1], res[2], net)
 
+@lru_cache(maxsize=4096)
 def address_to_pubkey_hash(address, net):
     try:
         return get_legacy_pubkey_hash(address, net)

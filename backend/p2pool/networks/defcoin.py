@@ -31,7 +31,7 @@ TARGET_LOOKBEHIND = 15 # shares
 SPREAD = 42 # blocks
 MIN_TARGET = 0
 MAX_TARGET = 2**256//2**20 - 1
-VERSION_CHECK = lambda v: None if 160002 <= v else 'Litecoin Cash version out of date. Upgrade to 0.16.0.2 or newer!' #dfc version?
+VERSION_CHECK = lambda v: None if 160002 <= v else 'Defcoin Core version out of date. Upgrade to a compatible Defcoin Core release.'
 VERSION_WARNING = lambda v: None
 BLOCK_MAX_SIZE = 4000000
 BLOCK_MAX_WEIGHT = 4000000

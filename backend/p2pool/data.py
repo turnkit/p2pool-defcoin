@@ -1,6 +1,7 @@
 
 
 import hashlib
+from functools import lru_cache
 import os
 import random
 import sys
@@ -92,6 +93,7 @@ def dustfix_flag_day_enabled(net):
         'DEFCOIN_P2POOL_DUSTFIX_FLAG_DAY', '').lower() in (
             '1', 'true', 'yes', 'on')
 
+@lru_cache(maxsize=16)
 def donation_script_to_address(net, script=DONATION_SCRIPT):
     try:
         return bitcoin_data.script2_to_address(

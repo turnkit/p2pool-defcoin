@@ -4,10 +4,11 @@ import unittest
 from p2pool.util import forest, math
 
 class DumbTracker(object):
-    def __init__(self, items=[]):
+    def __init__(self, items=None):
         self.items = {} # hash -> item
         self.reverse = {} # previous_hash -> set of item_hashes
         
+        items = [] if items is None else items
         for item in items:
             self.add(item)
     
