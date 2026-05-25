@@ -4,7 +4,7 @@ import sys
 
 def _default_pidfile():
     runtime_dir = os.environ.get('XDG_RUNTIME_DIR')
-    if runtime_dir:
+    if runtime_dir and os.path.isdir(runtime_dir) and os.access(runtime_dir, os.W_OK):
         return os.path.join(runtime_dir, 'p2pool.pid')
     state_dir = os.path.join(os.path.expanduser('~'), '.p2pool')
     os.makedirs(state_dir, mode=0o700, exist_ok=True)
