@@ -159,17 +159,18 @@ class HTTPServer(deferred_resource.DeferredResource):
         request.write(data)
 
 class LineBasedPeer(basic.LineOnlyReceiver):
-    delimiter = '\n'
+    delimiter = b'\n'
     
     def __init__(self):
         #basic.LineOnlyReceiver.__init__(self)
-        self._matcher = deferral.GenericDeferrer(max_id=2**30, func=lambda id, method, params: self.sendLine(json.dumps({
+        self._matcher = deferral.GenericDeferrer(max_id=2**30, func=lambda id, method, params: self.sendLine(ensure_bytes(json.dumps({
             'jsonrpc': '2.0',
             'method': method,
             'params': params,
             'id': id,
-        })))
+        }), 'utf-8')))
         self.other = Proxy(self._matcher)
     
     def lineReceived(self, line):
-        _handle(line, self, response_handler=self._matcher.got_response).addCallback(lambda line2: self.sendLine(line2) if line2 is not None else None)
+        _handle(line, self, response_handler=self._matcher.got_response).addCallback(
+            lambda line2: self.sendLine(ensure_bytes(line2, 'utf-8')) if line2 is not None else None)
