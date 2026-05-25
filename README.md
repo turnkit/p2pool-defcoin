@@ -5,6 +5,9 @@ To use P2Pool, you must be running your own local defcoind. It takes a while to 
 For the recommended modern Defcoin full-node wallet/source tree, see
 https://github.com/defcoincore/Defcoin-Core-Nu.
 
+Python 3 port and live dc903 resource comparison notes are in
+`docs/DEFCOIN_P2POOL_PYTHON3_RESOURCE_COMPARISON_2026-05-25.md`.
+
 
 Generic:
 * defcoind >=1.0.0

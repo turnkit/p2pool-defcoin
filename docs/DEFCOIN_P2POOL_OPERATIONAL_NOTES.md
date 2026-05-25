@@ -11,10 +11,10 @@ On the server, inspect it with:
 systemctl cat p2pool-defcoin
 ```
 
-The active service command is:
+The active Python 3 service command is:
 
 ```bash
-/usr/bin/python2.7 /home/dfcpool/p2pool-defcoin/run_p2pool.py --net defcoin --allow-obsolete-bitcoind -a DBbKV7upy41hV42dU895m4NcXn9AvHXUz9 -n 50.116.19.40 --bitcoind-p2p-port 10332 --fee 1.5
+/home/dfcpool/p2pool-defcoin-python3/.venv/bin/python /home/dfcpool/p2pool-defcoin-python3/run_p2pool.py --net defcoin --datadir /home/dfcpool/p2pool-defcoin/data --allow-obsolete-bitcoind -a DBbKV7upy41hV42dU895m4NcXn9AvHXUz9 -n 50.116.19.40 --bitcoind-address 127.0.0.1 --bitcoind-p2p-port 10332 --fee 1.5 --disable-upnp
 ```
 
 For this deployment:
@@ -35,6 +35,13 @@ This server fee is separate from P2Pool's legacy `DONATION_SCRIPT` / developer
 donation output. The legacy donation-script issue is a share-template and
 coinbase-compatibility issue; changing `-a` or `--fee` does not remove that dust
 output.
+
+## Python 3 live resource comparison
+
+The dc903 deployment was sampled against the saved Python 2 service and the
+Python 3 port on 2026-05-25. See
+`docs/DEFCOIN_P2POOL_PYTHON3_RESOURCE_COMPARISON_2026-05-25.md` for the method,
+results, caveats, and security conclusion.
 
 ## Version 36 donation dust fix
 
