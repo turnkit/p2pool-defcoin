@@ -603,7 +603,8 @@ def run():
                 '''rpcpassword=%x\r\n'''
                 '''\r\n'''
                 '''Keep that password secret! After creating the file, restart Bitcoin.''' % (conf_path, random.randrange(2**128)))
-        conf = open(conf_path, 'rb').read()
+        with open(conf_path, encoding='utf-8') as conf_file:
+            conf = conf_file.read()
         contents = {}
         for line in conf.splitlines(True):
             if '#' in line:
