@@ -19,5 +19,7 @@ build/
 backend/build/
 ltc_scrypt.so
 backend/ltc_scrypt.so
+*.cpython-*-darwin.so
+*.egg-info/
 
 .DS_Store

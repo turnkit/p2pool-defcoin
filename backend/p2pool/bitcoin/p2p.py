@@ -33,7 +33,7 @@ class Protocol(p2protocol.Protocol):
                 port=self.transport.getHost().port,
             ),
             nonce=secrets.randbits(64),
-            sub_version_num=ensure_bytes('/P2Pool:%s/' % (p2pool.__version__,), 'ascii'),
+            sub_version_num=ensure_bytes('/DefcoinP2Pool:%s/' % (p2pool.__version__,), 'ascii'),
             start_height=0,
         )
     

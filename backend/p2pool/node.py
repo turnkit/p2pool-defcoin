@@ -7,7 +7,20 @@ from twisted.python import log
 
 from p2pool import data as p2pool_data, p2p
 from p2pool.bitcoin import data as bitcoin_data, helper, height_tracker
-from p2pool.util import deferral, variable
+from p2pool.util import deferral, jsonrpc, variable
+from p2pool.util.py3 import hex_to_bytes
+
+
+def block_header_from_rpc(header):
+    previous_block = header.get('previousblockhash')
+    return dict(
+        version=header['version'],
+        previous_block=None if previous_block is None else int(previous_block, 16),
+        merkle_root=int(header['merkleroot'], 16),
+        timestamp=header['time'],
+        bits=bitcoin_data.FloatingIntegerType().unpack(hex_to_bytes(header['bits'])[::-1]),
+        nonce=header['nonce'],
+    )
 
 
 class P2PNode(p2p.Node):
@@ -256,10 +269,27 @@ class Node(object):
         self.handle_header = handle_header
 
         @defer.inlineCallbacks
-        def poll_header():
+        def get_best_block_header():
+            block_hash = self.bitcoind_work.value['previous_block']
+            try:
+                header = yield self.bitcoind.rpc_getblockheader('%064x' % (block_hash,))
+            except jsonrpc.Error as e:
+                if e.code != -32601:
+                    raise
+            else:
+                defer.returnValue(block_header_from_rpc(header))
+
             if self.factory.conn.value is None:
-                return
-            handle_header((yield self.factory.conn.value.get_block_header(self.bitcoind_work.value['previous_block'])))
+                defer.returnValue(None)
+
+            header = yield self.factory.conn.value.get_block_header(block_hash)
+            defer.returnValue(header)
+
+        @defer.inlineCallbacks
+        def poll_header():
+            header = yield get_best_block_header()
+            if header is not None:
+                handle_header(header)
         self.bitcoind_work.changed.watch(lambda _: poll_header())
         yield deferral.retry('Error while requesting best block header:')(poll_header)()
         

@@ -17,6 +17,10 @@ This fork keeps that P2Pool model and updates the Defcoin deployment path:
 - Defcoin Core Nu compatibility.
 - Dual parent-chain message magic during migration.
 - Defcoin User-Agent filtering for legacy-magic parent-chain address gossip.
+- Defcoin-specific P2Pool parent-chain identity:
+  `/DefcoinP2Pool:<version>/`.
+- RPC-based local best-header polling and block submission to reduce local
+  parent-chain peer churn.
 - Share version `36` to remove the old lost-key P2Pool donation dust output
   from new share templates.
 - Bounded deterministic caches for repeated conversion work.
@@ -24,6 +28,10 @@ This fork keeps that P2Pool model and updates the Defcoin deployment path:
 
 The recommended Defcoin full-node wallet is
 [Defcoin Core Nu](https://github.com/defcoincore/Defcoin-Core-Nu).
+
+The public repository name is `defcoin-p2pool`. The older
+`p2pool-defcoin` name may appear in upstream lineage notes because historical
+Defcoin P2Pool repositories used that naming pattern.
 
 ## Repository layout
 
@@ -102,6 +110,11 @@ boundary check, not a consensus rule. The purpose is to let modern Defcoin
 wallets reduce unrelated Litecoin-family traffic while preserving a migration
 path for older Defcoin wallets.
 
+Legacy support should be treated as temporary migration code. When supported
+wallets, pools, and seeds have moved to Defcoin-specific `defc014e` traffic,
+operators can disable legacy `fbc0b6db` compatibility and remove the
+pollution-filtering scaffolding that exists only to make the transition safe.
+
 ## User-Agent and address-gossip filtering
 
 Legacy-magic parent-chain peers can include unrelated Litecoin-family nodes. To
@@ -116,10 +129,44 @@ The documented valid prefix is:
 
 `/DefcoinCore:1.0.0/` is valid because it starts with `/Defcoin`.
 
+The P2Pool parent-chain connector identifies itself to Defcoin Core as:
+
+```text
+/DefcoinP2Pool:<version>/
+```
+
+This User-Agent is only for the Defcoin parent-chain P2P connection. The P2Pool
+share-network version string remains separate so share-protocol compatibility is
+not changed by the Defcoin User-Agent policy.
+
 The filtering goal is to drop non-Defcoin legacy peers before their `addr`
 messages can seed address tables or be rebroadcast. This avoids poisoning the
 small Defcoin network with unrelated peer addresses while still allowing valid
 Defcoin peers on nonstandard ports when they identify as Defcoin.
+
+The live Defcoin Core node may also use a short-lived bad-User-Agent prefilter
+for repeated public inbound non-`/Defcoin` legacy-magic attempts. That cache is
+not part of P2Pool share consensus and should not be treated as peer identity.
+It exists only to reduce repeated Litecoin-family connection noise while legacy
+magic remains enabled.
+
+For local pool operation, best-block-header polling prefers Defcoin Core RPC
+`getblockheader` rather than a local P2P `getheaders` request. This keeps the
+P2Pool-to-Defcoin Core loopback connection stable and avoids unnecessary local
+peer reconnect churn. If an older or simulated node does not provide
+`getblockheader`, the code falls back to the historical local P2P header
+request.
+
+Block submission to the local Defcoin Core node also uses RPC. The older P2Pool
+path sent a block over the local parent-chain P2P socket and submitted the same
+block over RPC. Modern Defcoin Core accepts and relays the RPC-submitted block,
+so the redundant local P2P block send is disabled to prevent unnecessary local
+peer disconnects after pool-found blocks.
+
+These RPC changes do not centralize mining. They only change how the local
+P2Pool process talks to the local Defcoin Core parent-chain node. P2Pool share
+validation, Stratum mining, peer-to-peer share propagation, and coinbase payout
+calculation remain P2Pool responsibilities.
 
 ## Share version 36 donation dust fix
 
@@ -295,6 +342,11 @@ Python 2.7 is end-of-life.
 
 The Python 3 port keeps the existing Defcoin P2Pool sharechain behavior while
 allowing current dependency audits, linting, and security hardening.
+
+The Python 3 runtime has been deployed on the dc903 pool. Later repository
+commits may be CI or documentation-only changes; operators should still run the
+test/audit gates and do a controlled service restart before treating a new
+commit as production-deployed.
 
 ## Dependency and security policy
 

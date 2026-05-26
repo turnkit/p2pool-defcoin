@@ -14,6 +14,9 @@ Run a pool node. Point miners at Stratum. Keep Defcoin mining cooperative.
 For the recommended modern Defcoin full-node wallet, use
 [Defcoin Core Nu](https://github.com/defcoincore/Defcoin-Core-Nu).
 
+Public source repository:
+[github.com/turnkit/defcoin-p2pool](https://github.com/turnkit/defcoin-p2pool).
+
 ## What changed
 
 - Python 3 runtime support with current dependency audits.
@@ -21,12 +24,18 @@ For the recommended modern Defcoin full-node wallet, use
   Defcoin `defc014e`, with per-peer reply magic.
 - `/Defcoin` User-Agent filtering for legacy-magic parent-chain peer address
   gossip.
+- A Defcoin-specific parent-chain P2P identity:
+  `/DefcoinP2Pool:<version>/`.
+- RPC-based best-header polling and block submission for the local Defcoin Core
+  connection, reducing unnecessary local peer reconnect churn.
 - Defcoin P2Pool share version `36`, which removes the old lost-key P2Pool
   developer donation dust output from new share templates.
 - Bounded caches for repeated target, difficulty, script, and address
   conversions used by the pool API and explorer-style display paths.
 - A cleaner backend/frontend layout so operators can run the backend with the
   bundled web UI or point it at a custom frontend.
+- CI checks for compile safety, selected Twisted tests, dependency audits,
+  Bandit medium/high security findings, and bundled frontend dependency scans.
 
 ## Screenshots
 
@@ -76,6 +85,11 @@ python run_p2pool.py \
 UPnP is disabled by default in this Defcoin fork. Use `--enable-upnp` only for
 consumer NAT deployments where automatic router port mapping is explicitly
 desired.
+
+The legacy-magic pollution filters are migration safeguards. Once the active
+Defcoin wallet and pool network can run on Defcoin-specific `defc014e` magic
+only, the legacy compatibility and related pollution-filtering paths can be
+removed.
 
 Point miners at the configured Stratum worker port, commonly:
 

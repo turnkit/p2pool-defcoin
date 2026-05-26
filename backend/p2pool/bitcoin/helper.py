@@ -174,7 +174,6 @@ def submit_block_rpc(block, ignore_failure, bitcoind, bitcoind_work, net):
         print('Block submittal result: %s (%r) Expected: %s' % (success, result, success_expected), file=sys.stderr)
 
 def submit_block(block, ignore_failure, node):
-    submit_block_p2p(block, node.factory, node.net)
     submit_block_rpc(block, ignore_failure, node.bitcoind, node.bitcoind_work,
                      node.net)
 
