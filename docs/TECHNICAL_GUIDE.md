@@ -57,6 +57,12 @@ which GitHub redirects to `hellbyte/p2pool-defcoin`. The code lineage also
 matches the `jtoomim/p2pool` generation of P2Pool, based on protocol/share
 version markers and module layout.
 
+A 2020 [g4tekeep3r Defcoin P2Pool writeup][g4tekeep3r-dfc-p2pool] also
+credits charlesrocket for spearheading the Defcoin P2Pool port and links the
+`charlesrocket/p2pool-defcoin` repository. That source is useful historical
+context for the public Defcoin P2Pool lineage and for the old port `9355`
+P2Pool nodes it listed.
+
 Important lineage markers:
 
 - P2Pool protocol version: `3501`.
@@ -67,6 +73,8 @@ Important lineage markers:
 The goal of this repository is not to ask an archived upstream to accept a pull
 request. It is to publish the current Defcoin P2Pool implementation in a clean,
 auditable form so other Defcoin pool operators can compare, run, and adapt it.
+
+[g4tekeep3r-dfc-p2pool]: https://www.g4tekeep3r.com/2020/08/16/dfc-p2pool/
 
 ## Defcoin-specific network behavior
 
